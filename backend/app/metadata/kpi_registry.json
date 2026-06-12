@@ -1,0 +1,15 @@
+{
+  "kpis": [
+    { "code": "MTTR",                  "name": "Mean Time To Repair",          "description": "Average time in hours to restore equipment after failure",          "default_chart": "bar",   "unit": "hours",  "source_priority": ["SMS"] },
+    { "code": "UPTIME",                "name": "System Uptime",                "description": "Percentage of scheduled time that assets are operational",          "default_chart": "bar",   "unit": "%",      "source_priority": ["NEX", "SMS"] },
+    { "code": "PM_COMPLETION",         "name": "PM Completion Rate",           "description": "Percentage of planned preventive maintenance tasks completed on time","default_chart": "bar",  "unit": "%",      "source_priority": ["SMS"] },
+    { "code": "REACTIVE_MAINTENANCE",  "name": "Reactive Maintenance Rate",    "description": "Percentage of reactive work orders resolved within SLA",           "default_chart": "line",  "unit": "%",      "source_priority": ["SMS"] },
+    { "code": "CSAT",                  "name": "Customer Satisfaction Score",  "description": "Weighted average customer satisfaction from post-service surveys",  "default_chart": "line",  "unit": "/ 5",    "source_priority": ["SMS"] },
+    { "code": "COMPLIANCE",            "name": "SLA Compliance",               "description": "Percentage of service requests handled within contracted SLA terms","default_chart": "bar",   "unit": "%",      "source_priority": ["SMS", "NEX"] },
+    { "code": "BREAK_FIX",             "name": "Break-Fix Response Rate",      "description": "Percentage of break-fix calls attended within priority target time","default_chart": "bar",   "unit": "%",      "source_priority": ["NEX"] },
+    { "code": "SYSTEM_AVAILABILITY",   "name": "System Availability",          "description": "Overall availability including planned and unplanned downtime",     "default_chart": "line",  "unit": "%",      "source_priority": ["NEX"] },
+    { "code": "INVOICE_CYCLE",         "name": "Invoice Cycle Time",           "description": "Average days from service completion to invoice generation",        "default_chart": "table", "unit": "days",   "source_priority": ["SAP"] },
+    { "code": "CONTRACT_COVERAGE",     "name": "Contract Coverage Rate",       "description": "Percentage of active assets covered under a maintenance contract",  "default_chart": "bar",   "unit": "%",      "source_priority": ["SAP", "SMS"] }
+  ],
+  "entities": ["contracts", "assets", "invoices", "opportunities", "kpis"]
+}
