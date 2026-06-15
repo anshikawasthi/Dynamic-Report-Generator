@@ -97,6 +97,7 @@ export default function App() {
   const [filters,  setFilters]        = useState({ rangePreset: "month", region: "", site: "", contract: "", language: "", startDate: "", endDate: "" });
   const [response, setResponse]       = useState({ data: [], presentation: { defaultChart: "bar" }, meta: {} });
   const [chartType, setChartType]     = useState("bar");
+  const [reportChartType, setReportChartType] = useState("bar");
   const [outputMode, setOutputMode]   = useState("summary");
   const [selectedSections, setSelectedSections] = useState(["KPIs", "Contracts", "Assets"]);
   const [permalink, setPermalink]     = useState("");
@@ -833,6 +834,7 @@ export default function App() {
                 onApply={loadData}
               />
 
+              {/* ── Section selector + Output mode ── */}
               <div className="grid-2">
                 <div className="card">
                   <div className="card-title" style={{ marginBottom: 14 }}>Report Sections</div>
@@ -857,18 +859,203 @@ export default function App() {
                 </div>
               </div>
 
+              {/* ── Chart type selector ── */}
               <div className="card">
                 <div className="card-header">
-                  <div><div className="card-title">Chart Preview</div><div className="card-subtitle">{rows.length} records loaded</div></div>
+                  <div><div className="card-title">Chart Style</div><div className="card-subtitle">Applies to preview, permalink, and downloaded reports</div></div>
                   <div className="button-row">
-                    {["bar","line","pie"].map((t) => (
-                      <button key={t} className={chartType === t ? "btn-primary btn-sm" : "btn-secondary btn-sm"} onClick={() => setChartType(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+                    {[
+                      { key: "bar",     icon: "▊", label: "Bar" },
+                      { key: "line",    icon: "〰", label: "Line" },
+                      { key: "pie",     icon: "◕", label: "Pie" },
+                      { key: "heatmap", icon: "⬛", label: "Heatmap" },
+                    ].map(({ key, icon, label }) => (
+                      <button
+                        key={key}
+                        className={reportChartType === key ? "btn-primary btn-sm" : "btn-secondary btn-sm"}
+                        onClick={() => setReportChartType(key)}
+                        title={label}
+                      >
+                        {icon} {label}
+                      </button>
                     ))}
                   </div>
                 </div>
-                <ChartWorkspace chartType={chartType} rows={chartRows} />
               </div>
 
+              {/* ── Live Report Preview ── */}
+              {(() => {
+                // apply contract/region filter to local mock data
+                const contractFilter = filters.contract;
+                const regionFilter = filters.region;
+                const filteredContracts = filterByRole(CONTRACTS, session.role).filter(c =>
+                  (!contractFilter || c.id === contractFilter) &&
+                  (!regionFilter || c.region === regionFilter)
+                );
+                const contractIds = filteredContracts.map(c => c.id);
+                const filteredAssets = filterByRole(ASSETS, session.role).filter(a =>
+                  (!contractFilter || filteredContracts.some(c => c.site === a.site))
+                );
+                const filteredInvoices = filterByRole(INVOICES, session.role).filter(i =>
+                  (!contractFilter || contractIds.includes(i.contract))
+                );
+                const filteredOpps = filterByRole(OPPORTUNITIES, session.role);
+                const filteredRows = rows.filter(r =>
+                  (!regionFilter || r.region === regionFilter) &&
+                  (!contractFilter || filteredContracts.some(c => c.site === r.site))
+                );
+                const activeRows = filteredRows.length ? filteredRows : rows;
+
+                return (
+                  <>
+                    <div style={{ borderBottom: "2px solid var(--hw-red)", padding: "0 0 10px 0", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontWeight: 700, color: "var(--hw-red)", fontSize: 15 }}>📋 LIVE REPORT PREVIEW</span>
+                      <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                        {contractFilter ? `Contract ${contractFilter}` : "All Contracts"} 
+                        {regionFilter ? ` · Region: ${regionFilter}` : ""} 
+                        · {outputMode === "summary" ? "Summary view" : "Detailed view"}
+                        · {activeRows.length} records
+                      </span>
+                    </div>
+
+                    {/* KPIs section */}
+                    {selectedSections.includes("KPIs") && (
+                      <div style={{ marginBottom: 20 }}>
+                        <div className="card-title" style={{ marginBottom: 12 }}>Key Performance Indicators</div>
+                        <div className="kpi-grid">
+                          <KPICard label="Mean Time To Repair"  value={kpiSummary.MTTR ?? "--"}              unit="hrs" color=""       trend="down" change={8}   source="SMS" />
+                          <KPICard label="System Uptime"        value={kpiSummary.UPTIME ?? "--"}            unit="%"   color="green"  trend="up"   change={1.2} source="NEX" />
+                          <KPICard label="PM Completion"        value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"   color="blue"   trend="up"   change={3.5} source="SMS" />
+                          <KPICard label="CSAT Score"           value={kpiSummary.CSAT ?? "--"}              unit="/ 5" color="amber"  trend="up"   change={2}   source="SMS" />
+                          <KPICard label="Invoice Cycle Time"   value={kpiSummary.INVOICE_CYCLE ?? "--"}     unit="days" color="purple" trend="down" change={5}  source="SAP" />
+                          <KPICard label="System Availability"  value={kpiSummary.SYSTEM_AVAILABILITY ?? "--"} unit="%"color="teal"  trend="up"   change={0.8} source="NEX" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Chart section */}
+                    {selectedSections.includes("KPIs") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header">
+                          <div><div className="card-title">Performance Chart</div><div className="card-subtitle">KPI values by site — {reportChartType} view</div></div>
+                        </div>
+                        <ChartWorkspace chartType={reportChartType} rows={chartRows} xKey="site" seriesKeys={["PM_COMPLETION","UPTIME","MTTR"]} />
+                      </div>
+                    )}
+
+                    {/* Service type breakdown */}
+                    {selectedSections.includes("KPIs") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header"><div className="card-title">Service Type Breakdown</div></div>
+                        <DataTable
+                          columns={[
+                            { key: "service", label: "Service Type" },
+                            { key: "count", label: "Work Orders" },
+                            { key: "compliance", label: "Compliance %", render: (v) => <span style={{ fontWeight: 600, color: v >= 90 ? "#10B981" : v >= 80 ? "#F59E0B" : "#EF4444" }}>{v}%</span> },
+                            { key: "mttr", label: "Avg MTTR" },
+                            { key: "uptime", label: "Avg Uptime" },
+                          ]}
+                          rows={[
+                            { service: "Remote Monitoring",    count: 128, compliance: 99, mttr: "N/A",    uptime: "99.8%" },
+                            { service: "Preventive Maintenance", count: 42,  compliance: 93, mttr: "N/A",  uptime: "98.5%" },
+                            { service: "Reactive / Break-Fix", count: 17,  compliance: 89, mttr: "4.2 hrs", uptime: "95.1%" },
+                          ]}
+                        />
+                      </div>
+                    )}
+
+                    {/* Contracts section */}
+                    {selectedSections.includes("Contracts") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header"><div className="card-title">Contracts</div><div className="card-subtitle">{filteredContracts.length} contract(s) matching filter</div></div>
+                        <DataTable
+                          columns={[
+                            { key: "id",       label: "Contract #" },
+                            { key: "customer", label: "Company" },
+                            { key: "region",   label: "Region" },
+                            { key: "site",     label: "Site" },
+                            { key: "sla",      label: "SLA Tier" },
+                            { key: "expiry",   label: "Expiry" },
+                            { key: "status",   label: "Status", render: (v) => statusBadge(v) },
+                          ]}
+                          rows={outputMode === "summary" ? filteredContracts.slice(0, 3) : filteredContracts}
+                        />
+                        {outputMode === "detailed" && (
+                          <div style={{ marginTop: 14 }}>
+                            <div className="card-title" style={{ fontSize: 13, marginBottom: 10 }}>SLA Health by Contract</div>
+                            {filteredContracts.map(c => (
+                              <div key={c.id} style={{ marginBottom: 10 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
+                                  <span><strong>{c.customer}</strong> — {c.id} ({c.site})</span>
+                                  <span style={{ color: "var(--hw-red)", fontWeight: 600 }}>{c.sla}</span>
+                                </div>
+                                <div className="progress-bar"><div className={`progress-fill ${c.sla === "Platinum" ? "green" : c.sla === "Gold" ? "blue" : "amber"}`} style={{ width: c.sla === "Platinum" ? "100%" : c.sla === "Gold" ? "75%" : "50%" }} /></div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Assets section */}
+                    {selectedSections.includes("Assets") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header"><div className="card-title">Assets</div><div className="card-subtitle">{filteredAssets.length} asset(s)</div></div>
+                        <DataTable
+                          columns={[
+                            { key: "id",     label: "Asset ID" },
+                            { key: "name",   label: "Name" },
+                            { key: "site",   label: "Site" },
+                            { key: "type",   label: "Type" },
+                            { key: "uptime", label: "Uptime" },
+                            { key: "lastPM", label: "Last PM" },
+                            { key: "status", label: "Status", render: (v) => statusBadge(v) },
+                          ]}
+                          rows={outputMode === "summary" ? filteredAssets.slice(0, 3) : filteredAssets}
+                        />
+                      </div>
+                    )}
+
+                    {/* Invoices section */}
+                    {selectedSections.includes("Invoices") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header"><div className="card-title">Invoices</div><div className="card-subtitle">{filteredInvoices.length} invoice(s)</div></div>
+                        <DataTable
+                          columns={[
+                            { key: "id",       label: "Invoice #" },
+                            { key: "contract", label: "Contract" },
+                            { key: "amount",   label: "Amount" },
+                            { key: "date",     label: "Invoice Date" },
+                            { key: "due",      label: "Due Date" },
+                            { key: "status",   label: "Status", render: (v) => statusBadge(v) },
+                          ]}
+                          rows={outputMode === "summary" ? filteredInvoices.slice(0, 3) : filteredInvoices}
+                        />
+                      </div>
+                    )}
+
+                    {/* Opportunities section */}
+                    {selectedSections.includes("Opportunities") && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header"><div className="card-title">Opportunities</div></div>
+                        <DataTable
+                          columns={[
+                            { key: "id",       label: "ID" },
+                            { key: "title",    label: "Title" },
+                            { key: "type",     label: "Type" },
+                            { key: "priority", label: "Priority", render: (v) => statusBadge(v) },
+                            { key: "value",    label: "Value" },
+                            { key: "site",     label: "Site" },
+                          ]}
+                          rows={outputMode === "summary" ? filteredOpps.slice(0, 3) : filteredOpps}
+                        />
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* ── Export & Share ── */}
               <div className="card">
                 <div className="card-header">
                   <div className="card-title">Export &amp; Share</div>
@@ -882,8 +1069,27 @@ export default function App() {
                   <button className="btn-secondary" onClick={() => handleExport("pdf")}>PDF</button>
                 </div>
                 {permalink && (
-                  <div className="info-banner success">
-                    ✅ Shareable link: <a href={permalink} target="_blank" rel="noreferrer" style={{ color: "var(--hw-red)", marginLeft: 6 }}>{permalink}</a>
+                  <div>
+                    <div className="info-banner success" style={{ marginBottom: 16 }}>
+                      ✅ Shareable link: <a href={permalink} target="_blank" rel="noreferrer" style={{ color: "var(--hw-red)", marginLeft: 6 }}>{permalink}</a>
+                    </div>
+                    {/* Inline permalink report preview */}
+                    <div style={{ border: "2px dashed var(--hw-red)", borderRadius: 10, padding: 20 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                        <span style={{ fontWeight: 700, fontSize: 15, color: "var(--hw-red)" }}>🔗 PERMALINK REPORT SNAPSHOT</span>
+                        <span style={{ fontSize: 11, color: "var(--text-secondary)", background: "var(--bg-page)", padding: "2px 8px", borderRadius: 12 }}>{new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}</span>
+                      </div>
+                      <div className="kpi-grid">
+                        <KPICard label="Mean Time To Repair"  value={kpiSummary.MTTR ?? "--"}              unit="hrs" color=""       trend="down" change={8}   source="SMS" />
+                        <KPICard label="System Uptime"        value={kpiSummary.UPTIME ?? "--"}            unit="%"   color="green"  trend="up"   change={1.2} source="NEX" />
+                        <KPICard label="PM Completion"        value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"   color="blue"   trend="up"   change={3.5} source="SMS" />
+                        <KPICard label="CSAT Score"           value={kpiSummary.CSAT ?? "--"}              unit="/ 5" color="amber"  trend="up"   change={2}   source="SMS" />
+                      </div>
+                      <div style={{ marginTop: 16 }}>
+                        <div className="card-title" style={{ marginBottom: 10, fontSize: 13 }}>Performance Chart ({reportChartType})</div>
+                        <ChartWorkspace chartType={reportChartType} rows={chartRows} xKey="site" seriesKeys={["PM_COMPLETION","UPTIME","MTTR"]} />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

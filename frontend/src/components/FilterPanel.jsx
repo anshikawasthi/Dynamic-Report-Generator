@@ -7,13 +7,21 @@ const RANGE_OPTIONS = [
   { value: "rolling13m", label: "Rolling 13 Months" },
 ];
 
+// All known contracts with company names for the dropdown
+export const CONTRACT_OPTIONS = [
+  { id: "",      label: "All Contracts",                   customer: "",          region: "" },
+  { id: "C-100", label: "C-100 — Acme Corp (Phoenix, NA)", customer: "Acme Corp", region: "NA",   site: "Phoenix",   sla: "Gold",     service: "Remote + Preventive" },
+  { id: "C-101", label: "C-101 — Acme Corp (Chicago, NA)", customer: "Acme Corp", region: "NA",   site: "Chicago",   sla: "Silver",   service: "Reactive + Preventive" },
+  { id: "C-200", label: "C-200 — Acme Corp (Bengaluru, APAC)", customer: "Acme Corp", region: "APAC", site: "Bengaluru", sla: "Platinum", service: "Remote + Active + Preventive" },
+];
+
 function FilterPanel({ filters, onChange, onApply }) {
   return (
     <div className="card">
       <div className="card-header">
         <div>
           <div className="card-title">Report Filters</div>
-          <div className="card-subtitle">Narrow the data by time period, geography, and contract</div>
+          <div className="card-subtitle">Narrow the data by time period, company, and contract</div>
         </div>
         <button className="btn-primary" onClick={onApply}>🔄 Apply Filters</button>
       </div>
@@ -47,13 +55,14 @@ function FilterPanel({ filters, onChange, onApply }) {
         </div>
 
         <div className="filter-group">
-          <label className="filter-label">Site</label>
-          <input placeholder="All sites" value={filters.site} onChange={(e) => onChange("site", e.target.value)} />
-        </div>
-
-        <div className="filter-group">
-          <label className="filter-label">Contract #</label>
-          <input placeholder="e.g. C-100" value={filters.contract} onChange={(e) => onChange("contract", e.target.value)} />
+          <label className="filter-label">Contract</label>
+          <select value={filters.contract} onChange={(e) => {
+            const opt = CONTRACT_OPTIONS.find(o => o.id === e.target.value);
+            onChange("contract", e.target.value);
+            if (opt?.region) onChange("region", opt.region);
+          }}>
+            {CONTRACT_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+          </select>
         </div>
 
         <div className="filter-group">
@@ -67,6 +76,22 @@ function FilterPanel({ filters, onChange, onApply }) {
           </select>
         </div>
       </div>
+
+      {/* Contract detail card when a specific contract is selected */}
+      {filters.contract && (() => {
+        const opt = CONTRACT_OPTIONS.find(o => o.id === filters.contract);
+        if (!opt?.customer) return null;
+        return (
+          <div style={{ marginTop: 14, padding: "12px 16px", background: "var(--bg-page)", borderRadius: 8, borderLeft: "4px solid var(--hw-red)", display: "flex", gap: 24, flexWrap: "wrap", fontSize: 13 }}>
+            <span><strong>Customer:</strong> {opt.customer}</span>
+            <span><strong>Contract:</strong> {opt.id}</span>
+            <span><strong>Region:</strong> {opt.region}</span>
+            <span><strong>Site:</strong> {opt.site}</span>
+            <span><strong>SLA Tier:</strong> {opt.sla}</span>
+            <span><strong>Services:</strong> <span style={{ color: "var(--hw-red)", fontWeight: 600 }}>{opt.service}</span></span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
