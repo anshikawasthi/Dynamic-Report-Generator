@@ -9,10 +9,10 @@ const RANGE_OPTIONS = [
 
 // All known contracts with company names for the dropdown
 export const CONTRACT_OPTIONS = [
-  { id: "",      label: "All Contracts",                   customer: "",          region: "" },
-  { id: "C-100", label: "C-100 — Acme Corp (Phoenix, NA)", customer: "Acme Corp", region: "NA",   site: "Phoenix",   sla: "Gold",     service: "Remote + Preventive" },
-  { id: "C-101", label: "C-101 — Acme Corp (Chicago, NA)", customer: "Acme Corp", region: "NA",   site: "Chicago",   sla: "Silver",   service: "Reactive + Preventive" },
-  { id: "C-200", label: "C-200 — Acme Corp (Bengaluru, APAC)", customer: "Acme Corp", region: "APAC", site: "Bengaluru", sla: "Platinum", service: "Remote + Active + Preventive" },
+  { id: "",      label: "All Contracts",                            customer: "",          region: "",     site: "",          sla: "",         service: "" },
+  { id: "C-100", label: "C-100 — Acme Corp (NA/EU multi-site)",    customer: "Acme Corp", region: "NA",   site: "Phoenix+",  sla: "Gold",     service: "Remote + Preventive + Active" },
+  { id: "C-101", label: "C-101 — Acme Corp (NA: Chicago, Houston)",customer: "Acme Corp", region: "NA",   site: "Chicago",   sla: "Silver",   service: "Reactive + Preventive" },
+  { id: "C-200", label: "C-200 — Acme Corp (EU/APAC Platinum)",    customer: "Acme Corp", region: "APAC", site: "Bengaluru+",sla: "Platinum", service: "Remote + Active + Preventive" },
 ];
 
 function FilterPanel({ filters, onChange, onApply }) {
