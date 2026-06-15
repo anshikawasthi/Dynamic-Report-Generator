@@ -89,6 +89,7 @@ function statusBadge(s) {
 export default function App() {
   const [username, setUsername]       = useState("cs_user");
   const [session,  setSession]        = useState(null);
+  const [authError, setAuthError]     = useState("");
   const [section,  setSection]        = useState("dashboard");
   const [dashboardTab, setDashboardTab] = useState("Overview");
   const [catalog,  setCatalog]        = useState([]);
@@ -147,14 +148,19 @@ export default function App() {
 
   // ── handlers ────────────────────────────────────────────────────────────────
   const handleLogin = async () => {
-    const data = await login(username);
-    setToken(data.accessToken);
-    setSession(data);
+    setAuthError("");
     setLoading(true);
     try {
+      const data = await login(username);
+      setToken(data.accessToken);
+      setSession(data);
       const res = await fetchUnified({ ...filters });
       setResponse(res);
       setChartType(res.presentation?.defaultChart || "bar");
+    } catch (err) {
+      const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
+      const message = apiMessage || "Sign in failed. Verify backend URL and CORS settings.";
+      setAuthError(message);
     } finally { setLoading(false); }
   };
 
@@ -208,7 +214,8 @@ export default function App() {
                 <option value="tenant2_user">Tenant 2 Demo (tenant2_user)</option>
               </select>
             </div>
-            <button className="login-btn" onClick={handleLogin}>Sign In →</button>
+            <button className="login-btn" onClick={handleLogin} disabled={loading}>{loading ? "Signing In..." : "Sign In →"}</button>
+            {!!authError && <div className="info-banner warning" style={{ marginTop: 12 }}>{authError}</div>}
           </div>
           <div className="login-hint">
             Demo instance • <span onClick={() => setUsername("director_user")}>Switch to Director view</span>

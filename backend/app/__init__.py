@@ -20,7 +20,10 @@ def create_app():
 
     app.store = create_seed_store()
     app.scheduler_service = SchedulerService()
-    app.scheduler_service.start()
+    try:
+        app.scheduler_service.start()
+    except Exception:
+        pass  # Scheduler is best-effort; serverless environments may not support background threads
     app.shared_reports = {}
 
     app.register_blueprint(api_bp, url_prefix="/api")
