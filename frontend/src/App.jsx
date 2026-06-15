@@ -225,23 +225,23 @@ export default function App() {
   };
 
   const handleShare = async () => {
-    // Encode full report snapshot into the URL so the link is self-contained
-    // and works even on stateless serverless (no server-side storage needed)
+    // Only encode compact aggregated data — NOT raw rows array.
+    // chartRows: ~22 rows × 7 cols; kpiSummary: 10 numbers → URL ~2-3KB total.
     const snapshot = {
       filters,
       kpiSummary,
-      data: rows.slice(0, 80),          // cap at 80 records to keep URL reasonable
       chartRows,
+      complianceMixRows,
       sections: selectedSections,
       outputMode,
       chartType: reportChartType,
       generatedAt: new Date().toISOString(),
       role: session.role,
+      totalRecords: rows.length,
     };
     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(snapshot))));
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    const url = `${baseUrl}/api/reports/shared/snapshot?d=${encoded}`;
-    setPermalink(url);
+    setPermalink(`${baseUrl}/api/reports/shared/snapshot?d=${encoded}`);
   };
 
   const handleExport = async (fmt) => {

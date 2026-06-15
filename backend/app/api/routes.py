@@ -151,28 +151,42 @@ def _render_html_report(snapshot):
     """Render a full Honeywell-branded HTML report with SVG charts from snapshot dict."""
     from flask import Response
 
-    data        = snapshot.get("data", [])
-    filters     = snapshot.get("filters", {})
-    kpi_summary = snapshot.get("kpiSummary", {})
-    chart_rows  = snapshot.get("chartRows", [])
-    chart_type  = snapshot.get("chartType", "bar")
-    sections    = snapshot.get("sections", [])
-    output_mode = snapshot.get("outputMode", "summary")
-    role        = snapshot.get("role", "")
-    generated_at = snapshot.get("generatedAt", "")[:19].replace("T", " ") + " UTC"
+    data             = snapshot.get("data", [])           # may be empty in compact mode
+    filters          = snapshot.get("filters", {})
+    kpi_summary      = snapshot.get("kpiSummary", {})
+    chart_rows       = snapshot.get("chartRows", [])
+    compliance_rows  = snapshot.get("complianceMixRows", [])
+    chart_type       = snapshot.get("chartType", "bar")
+    sections         = snapshot.get("sections", [])
+    output_mode      = snapshot.get("outputMode", "summary")
+    role             = snapshot.get("role", "")
+    total_records    = snapshot.get("totalRecords", len(data))
+    generated_at     = snapshot.get("generatedAt", "")[:19].replace("T", " ") + " UTC"
 
-    # ── KPI averages from raw data ───────────────────────────────────────────
+    # ── KPI averages: prefer frontend-computed kpiSummary, fall back to raw data ──
+    kpi_avgs = {k: v for k, v in kpi_summary.items() if v is not None}
+    # Fill any gaps from raw data if present
     kpi_totals, kpi_counts = {}, {}
     for rec in data:
         c = rec.get("kpi_code", "")
         v = float(rec.get("value", 0))
         kpi_totals[c] = kpi_totals.get(c, 0) + v
         kpi_counts[c] = kpi_counts.get(c, 0) + 1
-    kpi_avgs = {k: round(kpi_totals[k] / kpi_counts[k], 2) for k in kpi_totals}
-    # Merge in frontend-computed summary too
-    for k, v in kpi_summary.items():
-        if k not in kpi_avgs and v is not None:
-            kpi_avgs[k] = v
+    for k in kpi_totals:
+        if k not in kpi_avgs:
+            kpi_avgs[k] = round(kpi_totals[k] / kpi_counts[k], 2)
+
+    # ── site info: derive from chartRows (compact) or raw data ──────────────
+    seen_sites = {}
+    for r in chart_rows:
+        s = r.get("site", "")
+        if s and s not in seen_sites:
+            seen_sites[s] = r
+    if not seen_sites:
+        for r in data:
+            s = r.get("site", "")
+            if s and s not in seen_sites:
+                seen_sites[s] = r
 
     KPI_META = {
         "MTTR":                 ("Mean Time to Repair",  "hrs",  "#CC0000"),
@@ -280,16 +294,21 @@ def _render_html_report(snapshot):
 
         return f'<svg viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:{width}px"><circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="#F9FAFB"/>{paths}{legend}</svg>'
 
-    # ── build KPI pie slices ─────────────────────────────────────────────────
-    pie_slices = [
-        (KPI_META[k][0], kpi_avgs[k], KPI_META[k][2])
-        for k in ["PM_COMPLETION", "REACTIVE_MAINTENANCE", "SYSTEM_AVAILABILITY", "COMPLIANCE"]
-        if k in kpi_avgs
-    ]
+    # ── build KPI pie slices: use complianceMixRows if available, else derive ──
+    COMPLIANCE_COLORS = ["#1D6FA4", "#CC0000", "#0891B2", "#D97706"]
+    if compliance_rows:
+        pie_slices = [(r.get("name",""), r.get("value", 0), COMPLIANCE_COLORS[i % len(COMPLIANCE_COLORS)])
+                      for i, r in enumerate(compliance_rows) if r.get("value", 0) > 0]
+    else:
+        pie_slices = [
+            (KPI_META[k][0], kpi_avgs[k], KPI_META[k][2])
+            for k in ["PM_COMPLETION", "REACTIVE_MAINTENANCE", "SYSTEM_AVAILABILITY", "COMPLIANCE"]
+            if k in kpi_avgs
+        ]
 
     # ── bar chart rows ───────────────────────────────────────────────────────
-    bar_series = ["PM_COMPLETION", "UPTIME", "MTTR"]
-    bar_rows   = chart_rows if chart_rows else []
+    bar_series = [k for k in ["PM_COMPLETION", "UPTIME", "MTTR"] if any(k in r for r in chart_rows)]
+    bar_rows   = chart_rows
 
     # ── data table rows ──────────────────────────────────────────────────────
     def data_table_html(recs, limit=60):
@@ -312,10 +331,12 @@ def _render_html_report(snapshot):
     )
 
     kpi_cards_html = "".join(kpi_card_html(k) for k in KPI_META if k in kpi_avgs)
-    bar_svg        = svg_bar(bar_rows, bar_series, "site") if bar_rows else ""
+    bar_svg        = svg_bar(bar_rows, bar_series, "site") if bar_rows and bar_series else ""
     pie_svg        = svg_pie(pie_slices)
     sites_list     = ", ".join(sorted(seen_sites.keys())) or "All"
-    regions_list   = ", ".join(sorted(set(r.get("region","") for r in data if r.get("region")))) or "All"
+    regions_list   = ", ".join(sorted(set(
+        r.get("region", "") for r in list(seen_sites.values()) + data if r.get("region")
+    ))) or "All"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -358,7 +379,7 @@ def _render_html_report(snapshot):
   </div>
   <div class="meta">
     <span><b>Generated:</b> {generated_at}</span>
-    <span><b>Records:</b> {len(data)}</span>
+    <span><b>Records:</b> {total_records}</span>
     <span><b>Regions:</b> {regions_list}</span>
     <span><b>Contract:</b> {filters.get('contract') or 'All'}</span>
     <span><b>Range:</b> {filters.get('rangePreset','All')}</span>
@@ -384,12 +405,15 @@ def _render_html_report(snapshot):
 
     <h2>Site Coverage ({len(seen_sites)} sites)</h2>
     <table>
-      <thead><tr><th>Site</th><th>Region</th><th>Contract</th><th>Source</th><th>Service Type</th><th>Technician</th></tr></thead>
-      <tbody>{site_rows_html}</tbody>
+      <thead><tr><th>Site</th><th>PM Completion %</th><th>Uptime %</th><th>MTTR hrs</th><th>CSAT /5</th><th>Reactive %</th><th>Availability %</th></tr></thead>
+      <tbody>
+        {''.join(f"<tr><td><b>{r.get('site','')}</b></td><td>{r.get('PM_COMPLETION','—')}</td><td>{r.get('UPTIME','—')}</td><td>{r.get('MTTR','—')}</td><td>{r.get('CSAT','—')}</td><td>{r.get('REACTIVE_MAINTENANCE','—')}</td><td>{r.get('SYSTEM_AVAILABILITY','—')}</td></tr>"
+          for r in chart_rows)}
+      </tbody>
     </table>
 
-    <h2>KPI Data ({len(data)} records)</h2>
-    {data_table_html(data)}
+    <h2>KPI Summary ({total_records} backend records)</h2>
+    {data_table_html(data) if data else f'<p style="color:#6B7280;font-size:13px;padding:12px">Aggregated from {total_records} records. Full row-level data available in the app.</p>'}
 
     <div class="footer">
       Honeywell Building Solutions &middot; World Class Customer Reports &middot; Confidential &middot; {generated_at}
