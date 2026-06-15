@@ -225,9 +225,23 @@ export default function App() {
   };
 
   const handleShare = async () => {
-    const r = await shareReport({ filters, data: response.data });
+    // Encode full report snapshot into the URL so the link is self-contained
+    // and works even on stateless serverless (no server-side storage needed)
+    const snapshot = {
+      filters,
+      kpiSummary,
+      data: rows.slice(0, 80),          // cap at 80 records to keep URL reasonable
+      chartRows,
+      sections: selectedSections,
+      outputMode,
+      chartType: reportChartType,
+      generatedAt: new Date().toISOString(),
+      role: session.role,
+    };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(snapshot))));
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    setPermalink(`${baseUrl}${r.permalink}`);
+    const url = `${baseUrl}/api/reports/shared/snapshot?d=${encoded}`;
+    setPermalink(url);
   };
 
   const handleExport = async (fmt) => {
