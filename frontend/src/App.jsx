@@ -90,6 +90,7 @@ export default function App() {
   const [username, setUsername]       = useState("cs_user");
   const [session,  setSession]        = useState(null);
   const [section,  setSection]        = useState("dashboard");
+  const [dashboardTab, setDashboardTab] = useState("Overview");
   const [catalog,  setCatalog]        = useState([]);
   const [catQuery, setCatQuery]       = useState("");
   const [filters,  setFilters]        = useState({ rangePreset: "month", region: "", site: "", contract: "", language: "", startDate: "", endDate: "" });
@@ -242,8 +243,15 @@ export default function App() {
               <div className="tabs">
                 {[
                   "Overview", "Insights", "Preventive", "Reactive", "Remote", "CSAT", "Invoicing",
-                ].map((label, idx) => (
-                  <div key={label} className={`tab ${idx === 0 ? "active" : ""}`}>{label}</div>
+                ].map((label) => (
+                  <div 
+                    key={label} 
+                    className={`tab ${dashboardTab === label ? "active" : ""}`}
+                    onClick={() => setDashboardTab(label)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {label}
+                  </div>
                 ))}
               </div>
 
@@ -260,44 +268,47 @@ export default function App() {
                 </div>
               )}
 
-              <div className="kpi-grid">
-                <KPICard label="Mean Time To Repair"    value={kpiSummary.MTTR ?? "--"}              unit="hrs"  color=""       trend="down" change={8}   source="SMS" />
-                <KPICard label="System Uptime"          value={kpiSummary.UPTIME ?? "--"}            unit="%"    color="green"  trend="up"   change={1.2} source="NEX" />
-                <KPICard label="PM Completion"          value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"    color="blue"   trend="up"   change={3.5} source="SMS" />
-                <KPICard label="CSAT Score"             value={kpiSummary.CSAT ?? "--"}              unit="/ 5"  color="amber"  trend="up"   change={2}   source="SMS" />
-                <KPICard label="Invoice Cycle Time"     value={kpiSummary.INVOICE_CYCLE ?? "--"}     unit="days" color="purple" trend="down" change={5}   source="SAP" />
-                <KPICard label="System Availability"    value={kpiSummary.SYSTEM_AVAILABILITY ?? "--"} unit="%" color="teal" trend="up"   change={0.8} source="NEX" />
-              </div>
-
-              <div className="grid-2">
-                <div className="card">
-                  <div className="card-header">
-                    <div><div className="card-title">Performance by Site</div><div className="card-subtitle">KPI values grouped by location</div></div>
-                    <div className="button-row">
-                      {["bar","line","pie"].map((t) => (
-                        <button key={t} className={chartType === t ? "btn-primary btn-sm" : "btn-secondary btn-sm"} onClick={() => setChartType(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
-                      ))}
-                    </div>
+              {/* ── OVERVIEW TAB ─────────────────────────────── */}
+              {dashboardTab === "Overview" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="Mean Time To Repair"    value={kpiSummary.MTTR ?? "--"}              unit="hrs"  color=""       trend="down" change={8}   source="SMS" />
+                    <KPICard label="System Uptime"          value={kpiSummary.UPTIME ?? "--"}            unit="%"    color="green"  trend="up"   change={1.2} source="NEX" />
+                    <KPICard label="PM Completion"          value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"    color="blue"   trend="up"   change={3.5} source="SMS" />
+                    <KPICard label="CSAT Score"             value={kpiSummary.CSAT ?? "--"}              unit="/ 5"  color="amber"  trend="up"   change={2}   source="SMS" />
+                    <KPICard label="Invoice Cycle Time"     value={kpiSummary.INVOICE_CYCLE ?? "--"}     unit="days" color="purple" trend="down" change={5}   source="SAP" />
+                    <KPICard label="System Availability"    value={kpiSummary.SYSTEM_AVAILABILITY ?? "--"} unit="%" color="teal" trend="up"   change={0.8} source="NEX" />
                   </div>
-                  <ChartWorkspace chartType={chartType} rows={chartRows} xKey="site" seriesKeys={["PM_COMPLETION", "UPTIME", "MTTR"]} />
-                </div>
 
-                <div className="card">
-                  <div className="card-header">
-                    <div><div className="card-title">Contract Health</div><div className="card-subtitle">Entitlements &amp; expiry summary</div></div>
-                  </div>
-                  {[
-                    { label: "SLA Compliance",       pct: 94, color: "green" },
-                    { label: "PM Scheduling",         pct: 88, color: "blue" },
-                    { label: "Reactive Response",     pct: 79, color: "amber" },
-                    { label: "Invoicing On-Time",     pct: 96, color: "green" },
-                    { label: "Contract Renewal Risk", pct: 32, color: "" },
-                  ].map(({ label, pct, color }) => (
-                    <div key={label} style={{ marginBottom: 12 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
-                        <span>{label}</span><span style={{ fontWeight: 600 }}>{pct}%</span>
+                  <div className="grid-2">
+                    <div className="card">
+                      <div className="card-header">
+                        <div><div className="card-title">Performance by Site</div><div className="card-subtitle">KPI values grouped by location</div></div>
+                        <div className="button-row">
+                          {["bar","line","pie"].map((t) => (
+                            <button key={t} className={chartType === t ? "btn-primary btn-sm" : "btn-secondary btn-sm"} onClick={() => setChartType(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="progress-bar"><div className={`progress-fill ${color}`} style={{ width: `${pct}%` }} /></div>
+                      <ChartWorkspace chartType={chartType} rows={chartRows} xKey="site" seriesKeys={["PM_COMPLETION", "UPTIME", "MTTR"]} />
+                    </div>
+
+                    <div className="card">
+                      <div className="card-header">
+                        <div><div className="card-title">Contract Health</div><div className="card-subtitle">Entitlements &amp; expiry summary</div></div>
+                      </div>
+                      {[
+                        { label: "SLA Compliance",       pct: 94, color: "green" },
+                        { label: "PM Scheduling",         pct: 88, color: "blue" },
+                        { label: "Reactive Response",     pct: 79, color: "amber" },
+                        { label: "Invoicing On-Time",     pct: 96, color: "green" },
+                        { label: "Contract Renewal Risk", pct: 32, color: "" },
+                      ].map(({ label, pct, color }) => (
+                        <div key={label} style={{ marginBottom: 12 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--text-secondary)", marginBottom: 4 }}>
+                            <span>{label}</span><span style={{ fontWeight: 600 }}>{pct}%</span>
+                          </div>
+                          <div className="progress-bar"><div className={`progress-fill ${color}`} style={{ width: `${pct}%` }} /></div>
                     </div>
                   ))}
                 </div>
@@ -380,6 +391,286 @@ export default function App() {
                   />
                 </div>
               </div>
+              </>
+              )}
+
+              {/* ── INSIGHTS TAB ─────────────────────────── */}
+              {dashboardTab === "Insights" && (
+                <>
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">AI-Driven Insights & Recommendations</div>
+                    </div>
+                    <div className="kpi-grid">
+                      <div className="phase2-item">
+                        <div className="phase2-icon-wrap amber">⚠️</div>
+                        <div>
+                          <div className="phase2-title">Risk Profiling</div>
+                          <div className="phase2-desc">Chiller #2 at Tier 1 criticality shows high vibration & short-cycling. Risk score: 88%. Estimated cost impact: $48K/yr if failure occurs.</div>
+                          <div className="phase2-eta">Confidence: High • Data source: SMS sensors</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Bad Actor Detection</div>
+                    </div>
+                    <DataTable
+                      columns={[
+                        { key: "asset", label: "Asset" },
+                        { key: "failures", label: "Failures (12mo)" },
+                        { key: "mttr", label: "Avg MTTR" },
+                        { key: "cost", label: "Maintenance Cost" },
+                        { key: "recommendation", label: "Recommendation" },
+                      ]}
+                      rows={[
+                        { asset: "Boiler #1", failures: 7, mttr: "8.5 hrs", cost: "$12,400", recommendation: "Plan replacement in Q3" },
+                        { asset: "AHU-3", failures: 5, mttr: "6.2 hrs", cost: "$8,900", recommendation: "Coil cleaning & rebalance" },
+                        { asset: "VAV Loop A17", failures: 4, mttr: "4.1 hrs", cost: "$6,200", recommendation: "PID tuning review" },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Obsolescence Alerts</div>
+                    </div>
+                    <div className="info-banner warning">⚠️ <strong>A-903 (West Boiler, Chicago)</strong> is 14 years old. Parts availability declining. Recommend replacement study in next 18 months.</div>
+                  </div>
+                </>
+              )}
+
+              {/* ── PREVENTIVE TAB ─────────────────────────── */}
+              {dashboardTab === "Preventive" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="PM Completion Rate" value={88} unit="%" color="green" trend="up" change={2.3} source="SMS" />
+                    <KPICard label="Scheduled vs Completed" value={92} unit="%" color="blue" trend="up" change={1.5} source="SMS" />
+                    <KPICard label="PM Schedule Adherence" value={85} unit="%" color="amber" trend="up" change={3.2} source="SMS" />
+                    <KPICard label="Preventive Cost Index" value={3.2} unit="$/mth" color="purple" trend="down" change={0.4} source="SMS" />
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">PM Compliance Trend</div>
+                        <div className="card-subtitle">Last 13 months</div>
+                      </div>
+                      <ChartWorkspace
+                        chartType="line"
+                        rows={HEALTH_TREND_ROWS}
+                        xKey="month"
+                        seriesKeys={["PM_COMPLIANCE"]}
+                      />
+                    </div>
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">PM Schedule by Site</div>
+                      </div>
+                      <DataTable
+                        columns={[
+                          { key: "site", label: "Site" },
+                          { key: "scheduled", label: "Scheduled" },
+                          { key: "completed", label: "Completed" },
+                          { key: "rate", label: "Rate", render: (v) => <span style={{ fontWeight: 600, color: "var(--hw-red)" }}>{v}%</span> },
+                        ]}
+                        rows={[
+                          { site: "Phoenix", scheduled: 12, completed: 12, rate: 100 },
+                          { site: "Chicago", scheduled: 11, completed: 9, rate: 82 },
+                          { site: "Houston", scheduled: 10, completed: 9, rate: 90 },
+                          { site: "Denver", scheduled: 9, completed: 8, rate: 89 },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── REACTIVE TAB ─────────────────────────── */}
+              {dashboardTab === "Reactive" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="Mean Time To Repair" value={4.2} unit="hrs" color="" trend="down" change={1.1} source="SMS" />
+                    <KPICard label="Reactive Compliance" value={89} unit="%" color="green" trend="up" change={2.5} source="SMS" />
+                    <KPICard label="Response Time" value={1.3} unit="hrs" color="blue" trend="up" change={0.2} source="SMS" />
+                    <KPICard label="SLA Adherence" value={94} unit="%" color="amber" trend="up" change={1.8} source="SMS" />
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Recent Reactive Incidents</div>
+                    </div>
+                    <DataTable
+                      columns={[
+                        { key: "incident", label: "Incident #" },
+                        { key: "asset", label: "Asset" },
+                        { key: "date", label: "Date" },
+                        { key: "response", label: "Response Time" },
+                        { key: "resolution", label: "Resolution Time" },
+                        { key: "status", label: "Status", render: (v) => statusBadge(v) },
+                      ]}
+                      rows={[
+                        { incident: "INC-2026-001", asset: "Chiller #2", date: "2026-06-10", response: "45 min", resolution: "3.5 hrs", status: "Closed" },
+                        { incident: "INC-2026-002", asset: "Boiler #1", date: "2026-06-09", response: "30 min", resolution: "4.2 hrs", status: "Closed" },
+                        { incident: "INC-2026-003", asset: "AHU-3", date: "2026-06-08", response: "1.2 hrs", resolution: "2.1 hrs", status: "Closed" },
+                      ]}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ── REMOTE TAB ─────────────────────────── */}
+              {dashboardTab === "Remote" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="System Availability" value={90} unit="%" color="green" trend="up" change={0.8} source="NEX" />
+                    <KPICard label="Remote Monitoring Uptime" value={99.8} unit="%" color="blue" trend="up" change={0.1} source="NEX" />
+                    <KPICard label="Sensors Online" value={847} unit="of 850" color="amber" trend="up" change={2} source="NEX" />
+                    <KPICard label="Data Collection Rate" value={98.5} unit="%" color="purple" trend="up" change={0.3} source="NEX" />
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">Remote Monitoring Compliance</div>
+                      </div>
+                      <ChartWorkspace
+                        chartType="line"
+                        rows={HEALTH_TREND_ROWS}
+                        xKey="month"
+                        seriesKeys={["REMOTE_COMPLIANCE"]}
+                      />
+                    </div>
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">Sensor Status by Site</div>
+                      </div>
+                      <DataTable
+                        columns={[
+                          { key: "site", label: "Site" },
+                          { key: "total", label: "Total Sensors" },
+                          { key: "online", label: "Online" },
+                          { key: "rate", label: "Rate", render: (v) => <span style={{ fontWeight: 600, color: "var(--hw-red)" }}>{v}%</span> },
+                        ]}
+                        rows={[
+                          { site: "Phoenix", total: 215, online: 215, rate: 100 },
+                          { site: "Chicago", total: 198, online: 197, rate: 99.5 },
+                          { site: "Houston", total: 210, online: 208, rate: 99 },
+                          { site: "Denver", total: 224, online: 227, rate: 100 },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── CSAT TAB ─────────────────────────── */}
+              {dashboardTab === "CSAT" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="Overall CSAT Score" value={4.6} unit="/ 5.0" color="green" trend="up" change={0.2} source="SMS" />
+                    <KPICard label="Net Promoter Score" value={72} unit="pts" color="blue" trend="up" change={5} source="SMS" />
+                    <KPICard label="Resolution Quality" value={92} unit="%" color="amber" trend="up" change={1.5} source="SMS" />
+                    <KPICard label="Customer Satisfaction Trend" value={88} unit="%" color="purple" trend="up" change={3.2} source="SMS" />
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">CSAT Score Trend (Rolling 13 Months)</div>
+                    </div>
+                    <ChartWorkspace
+                      chartType="line"
+                      rows={HEALTH_TREND_ROWS.map(row => ({ month: row.month, CSAT: Math.round((row.PM_COMPLIANCE + row.REACTIVE_COMPLIANCE + row.REMOTE_COMPLIANCE) / 3 * 0.92) / 100 * 5 }))}
+                      xKey="month"
+                      seriesKeys={["CSAT"]}
+                    />
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Satisfaction by Category</div>
+                    </div>
+                    <DataTable
+                      columns={[
+                        { key: "category", label: "Category" },
+                        { key: "score", label: "Score", render: (v) => <span style={{ fontWeight: 600, color: "var(--hw-red)" }}>{v}</span> },
+                        { key: "trend", label: "Trend" },
+                        { key: "feedback", label: "Key Feedback" },
+                      ]}
+                      rows={[
+                        { category: "Response Time", score: "4.7 / 5", trend: "↑ +0.3", feedback: "Consistently fast response" },
+                        { category: "Technical Competence", score: "4.6 / 5", trend: "↑ +0.2", feedback: "Well-trained technicians" },
+                        { category: "Communication", score: "4.5 / 5", trend: "→ 0.0", feedback: "Could be more proactive" },
+                        { category: "First-Time Fix Rate", score: "4.4 / 5", trend: "↑ +0.5", feedback: "Improving with better diagnostics" },
+                      ]}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ── INVOICING TAB ─────────────────────── */}
+              {dashboardTab === "Invoicing" && (
+                <>
+                  <div className="kpi-grid">
+                    <KPICard label="Avg Invoice Cycle Time" value={11} unit="days" color="green" trend="down" change={2} source="SAP" />
+                    <KPICard label="Invoice On-Time Rate" value={96} unit="%" color="blue" trend="up" change={1.5} source="SAP" />
+                    <KPICard label="Payment Aging" value={18} unit="days" color="amber" trend="down" change={3} source="SAP" />
+                    <KPICard label="Invoice Accuracy Rate" value={99.2} unit="%" color="purple" trend="up" change={0.3} source="SAP" />
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">Invoice Volume Trend</div>
+                      </div>
+                      <ChartWorkspace
+                        chartType="bar"
+                        rows={HEALTH_TREND_ROWS.map(row => ({ month: row.month, volume: Math.floor(Math.random() * 50) + 20, paid: Math.floor(Math.random() * 40) + 15 }))}
+                        xKey="month"
+                        seriesKeys={["volume", "paid"]}
+                      />
+                    </div>
+                    <div className="card">
+                      <div className="card-header">
+                        <div className="card-title">Payment Status Summary</div>
+                      </div>
+                      <DataTable
+                        columns={[
+                          { key: "status", label: "Status" },
+                          { key: "count", label: "Count" },
+                          { key: "amount", label: "Amount" },
+                          { key: "days", label: "Avg Days" },
+                        ]}
+                        rows={[
+                          { status: "Paid", count: 142, amount: "$185,400", days: 15 },
+                          { status: "Outstanding", count: 28, amount: "$42,300", days: 22 },
+                          { status: "Overdue", count: 3, amount: "$5,850", days: 35 },
+                          { status: "Disputed", count: 1, amount: "$1,200", days: 10 },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-title">Recent Invoices</div>
+                    </div>
+                    <DataTable
+                      columns={[
+                        { key: "invoice", label: "Invoice #" },
+                        { key: "contract", label: "Contract" },
+                        { key: "amount", label: "Amount" },
+                        { key: "date", label: "Date" },
+                        { key: "due", label: "Due" },
+                        { key: "status", label: "Status", render: (v) => statusBadge(v) },
+                      ]}
+                      rows={filterByRole(INVOICES, session.role)}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
 

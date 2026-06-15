@@ -2,6 +2,9 @@ import axios from "axios";
 
 // Dynamically determine API base URL from current location
 function getApiBaseUrl() {
+  const explicitBase = import.meta.env.VITE_API_BASE_URL;
+  if (explicitBase) return explicitBase;
+
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   const port = hostname === "localhost" || hostname === "127.0.0.1" ? ":8000" : "";
