@@ -179,7 +179,7 @@ export default function App() {
   const handleShare = async () => {
     const r = await shareReport({ filters, data: response.data });
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
-    setPermalink(`${baseUrl}/report/${r.permalink}`);
+    setPermalink(`${baseUrl}${r.permalink}`);
   };
 
   const handleExport = async (fmt) => {

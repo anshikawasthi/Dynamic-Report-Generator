@@ -165,9 +165,12 @@ def export_report(fmt):
 
     fn, mimetype, filename = exporters[fmt]
     binary = fn(records)
-    from io import BytesIO
-
-    return send_file(BytesIO(binary), mimetype=mimetype, as_attachment=True, download_name=filename)
+    
+    # Return binary response directly for serverless compatibility
+    from flask import Response
+    response = Response(binary, mimetype=mimetype)
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return response
 
 
 @api_bp.get("/phase2/ai-context")
