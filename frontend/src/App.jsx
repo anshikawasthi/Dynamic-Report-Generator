@@ -148,6 +148,7 @@ export default function App() {
   const [outputMode, setOutputMode]   = useState("summary");
   const [selectedSections, setSelectedSections] = useState(["KPIs", "Contracts", "Assets"]);
   const [permalink, setPermalink]     = useState("");
+  const [reportDrilldown, setReportDrilldown] = useState(null);
   const [loading, setLoading]         = useState(false);
   const [templatesSaved, setTemplatesSaved] = useState([]);
   const [aliases, setAliases]         = useState({ "A-900": "North Chiller", "A-901": "East Compressor" });
@@ -253,6 +254,11 @@ export default function App() {
 
   const toggleSection = (s) =>
     setSelectedSections((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s]);
+
+  useEffect(() => {
+    // Clear drilldown when report context changes
+    setReportDrilldown(null);
+  }, [filters, selectedSections, outputMode, reportChartType]);
 
   // ── login screen ─────────────────────────────────────────────────────────────
   if (!session) {
@@ -984,12 +990,12 @@ export default function App() {
                       <div style={{ marginBottom: 20 }}>
                         <div className="card-title" style={{ marginBottom: 12 }}>Key Performance Indicators</div>
                         <div className="kpi-grid">
-                          <KPICard label="Mean Time To Repair"  value={kpiSummary.MTTR ?? "--"}              unit="hrs" color=""       trend="down" change={8}   source="SMS" />
-                          <KPICard label="System Uptime"        value={kpiSummary.UPTIME ?? "--"}            unit="%"   color="green"  trend="up"   change={1.2} source="NEX" />
-                          <KPICard label="PM Completion"        value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"   color="blue"   trend="up"   change={3.5} source="SMS" />
-                          <KPICard label="CSAT Score"           value={kpiSummary.CSAT ?? "--"}              unit="/ 5" color="amber"  trend="up"   change={2}   source="SMS" />
-                          <KPICard label="Invoice Cycle Time"   value={kpiSummary.INVOICE_CYCLE ?? "--"}     unit="days" color="purple" trend="down" change={5}  source="SAP" />
-                          <KPICard label="System Availability"  value={kpiSummary.SYSTEM_AVAILABILITY ?? "--"} unit="%"color="teal"  trend="up"   change={0.8} source="NEX" />
+                          <KPICard label="Mean Time To Repair"  value={kpiSummary.MTTR ?? "--"}              unit="hrs" color=""       trend="down" change={8}   source="SMS" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "MTTR", title: "MTTR" })} />
+                          <KPICard label="System Uptime"        value={kpiSummary.UPTIME ?? "--"}            unit="%"   color="green"  trend="up"   change={1.2} source="NEX" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "UPTIME", title: "UPTIME" })} />
+                          <KPICard label="PM Completion"        value={kpiSummary.PM_COMPLETION ?? "--"}     unit="%"   color="blue"   trend="up"   change={3.5} source="SMS" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "PM_COMPLETION", title: "PM Completion" })} />
+                          <KPICard label="CSAT Score"           value={kpiSummary.CSAT ?? "--"}              unit="/ 5" color="amber"  trend="up"   change={2}   source="SMS" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "CSAT", title: "CSAT" })} />
+                          <KPICard label="Invoice Cycle Time"   value={kpiSummary.INVOICE_CYCLE ?? "--"}     unit="days" color="purple" trend="down" change={5}  source="SAP" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "INVOICE_CYCLE", title: "Invoice Cycle" })} />
+                          <KPICard label="System Availability"  value={kpiSummary.SYSTEM_AVAILABILITY ?? "--"} unit="%"color="teal"  trend="up"   change={0.8} source="NEX" onClick={() => setReportDrilldown({ source: "tile", kpiCode: "SYSTEM_AVAILABILITY", title: "System Availability" })} />
                         </div>
                       </div>
                     )}
@@ -998,9 +1004,49 @@ export default function App() {
                     {selectedSections.includes("KPIs") && (
                       <div className="card" style={{ marginBottom: 20 }}>
                         <div className="card-header">
-                          <div><div className="card-title">Performance Chart</div><div className="card-subtitle">KPI values by site — {reportChartType} view</div></div>
+                          <div><div className="card-title">Performance Chart</div><div className="card-subtitle">KPI values by site — {reportChartType} view (click points/bars/slices to drill down)</div></div>
                         </div>
-                        <ChartWorkspace chartType={reportChartType} rows={chartRows} xKey="site" seriesKeys={["PM_COMPLETION","UPTIME","MTTR"]} />
+                        <ChartWorkspace
+                          chartType={reportChartType}
+                          rows={chartRows}
+                          xKey="site"
+                          seriesKeys={["PM_COMPLETION","UPTIME","MTTR"]}
+                          onPointClick={(p) => setReportDrilldown({
+                            source: "chart",
+                            site: p?.x,
+                            kpiCode: p?.series,
+                            title: `${p?.series || "KPI"} @ ${p?.x || "All Sites"}`,
+                          })}
+                        />
+                      </div>
+                    )}
+
+                    {selectedSections.includes("KPIs") && reportDrilldown && (
+                      <div className="card" style={{ marginBottom: 20 }}>
+                        <div className="card-header">
+                          <div>
+                            <div className="card-title">Drilldown Detail</div>
+                            <div className="card-subtitle">
+                              {reportDrilldown.title} {reportDrilldown.site ? `• Site ${reportDrilldown.site}` : ""}
+                            </div>
+                          </div>
+                          <button className="btn-outline btn-sm" onClick={() => setReportDrilldown(null)}>Reset Drilldown</button>
+                        </div>
+                        <DataTable
+                          columns={[
+                            { key: "site", label: "Site" },
+                            { key: "kpi_code", label: "KPI" },
+                            { key: "value", label: "Value" },
+                            { key: "unit", label: "Unit" },
+                            { key: "contract_id", label: "Contract" },
+                            { key: "region", label: "Region" },
+                            { key: "source", label: "Source" },
+                          ]}
+                          rows={activeRows.filter((r) =>
+                            (!reportDrilldown.kpiCode || r.kpi_code === reportDrilldown.kpiCode) &&
+                            (!reportDrilldown.site || r.site === reportDrilldown.site)
+                          )}
+                        />
                       </div>
                     )}
 

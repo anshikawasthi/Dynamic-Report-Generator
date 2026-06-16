@@ -53,7 +53,7 @@ function toPieRows(rows, seriesKeys, xKey) {
   return Object.entries(totals).map(([name, value]) => ({ name, value: +value.toFixed(1) }));
 }
 
-function ChartWorkspace({ chartType = "bar", rows = [], xKey = "site", seriesKeys = [] }) {
+function ChartWorkspace({ chartType = "bar", rows = [], xKey = "site", seriesKeys = [], onPointClick = null }) {
   if (!rows.length) {
     return (
       <div style={{ textAlign: "center", padding: "30px 0", color: "var(--text-secondary)", fontSize: 13 }}>
@@ -79,21 +79,63 @@ function ChartWorkspace({ chartType = "bar", rows = [], xKey = "site", seriesKey
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               {finalSeries.slice(0, 4).map((key, i) => (
-                <Bar key={key} dataKey={key} name={key} fill={COLORS[i]} radius={[3, 3, 0, 0]} />
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  name={key}
+                  fill={COLORS[i]}
+                  radius={[3, 3, 0, 0]}
+                  onClick={(entry) => onPointClick && onPointClick({
+                    x: entry?.payload?.[xKey],
+                    series: key,
+                    value: entry?.payload?.[key],
+                    row: entry?.payload,
+                    chartType: "bar",
+                  })}
+                />
               ))}
             </BarChart>
           ) : chartType === "pie" ? (
             <PieChart>
-              <Pie data={pieRows.slice(0, 8)} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} label={({ name, value }) => `${name}: ${value}`}>
+              <Pie
+                data={pieRows.slice(0, 8)}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={110}
+                label={({ name, value }) => `${name}: ${value}`}
+                onClick={(entry) => onPointClick && onPointClick({
+                  x: entry?.name,
+                  series: entry?.name,
+                  value: entry?.value,
+                  row: entry,
+                  chartType: "pie",
+                })}
+              >
                 {pieRows.slice(0, 8).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
             </PieChart>
           ) : chartType === "heatmap" ? (
-            <HeatmapChart rows={rows} xKey={xKey} seriesKeys={finalSeries} />
+            <HeatmapChart rows={rows} xKey={xKey} seriesKeys={finalSeries} onPointClick={onPointClick} />
           ) : (
-            <LineChart data={seriesRows} margin={margin}>
+            <LineChart
+              data={seriesRows}
+              margin={margin}
+              onClick={(state) => {
+                if (!onPointClick || !state?.activePayload?.length) return;
+                const p = state.activePayload[0];
+                onPointClick({
+                  x: state.activeLabel,
+                  series: p?.name,
+                  value: p?.value,
+                  row: p?.payload,
+                  chartType: "line",
+                });
+              }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
               <XAxis dataKey={xKey} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
@@ -120,7 +162,7 @@ function ChartWorkspace({ chartType = "bar", rows = [], xKey = "site", seriesKey
 }
 
 // ── Heatmap (pure CSS grid, no extra lib) ─────────────────────────────────────
-function HeatmapChart({ rows, xKey, seriesKeys }) {
+function HeatmapChart({ rows, xKey, seriesKeys, onPointClick = null }) {
   if (!rows.length || !seriesKeys.length) return null;
   const allVals = rows.flatMap(r => seriesKeys.map(k => Number(r[k] ?? 0)));
   const min = Math.min(...allVals);
@@ -150,7 +192,18 @@ function HeatmapChart({ rows, xKey, seriesKeys }) {
               {seriesKeys.map(k => {
                 const val = Number(row[k] ?? 0);
                 return (
-                  <td key={k} title={`${row[xKey]} / ${k}: ${val}`} style={{ padding: "6px 10px", textAlign: "center", background: heatColor(val), color: "#fff", fontWeight: 600, borderRadius: 4, margin: 2 }}>
+                  <td
+                    key={k}
+                    title={`${row[xKey]} / ${k}: ${val}`}
+                    onClick={() => onPointClick && onPointClick({
+                      x: row[xKey],
+                      series: k,
+                      value: val,
+                      row,
+                      chartType: "heatmap",
+                    })}
+                    style={{ padding: "6px 10px", textAlign: "center", background: heatColor(val), color: "#fff", fontWeight: 600, borderRadius: 4, margin: 2, cursor: onPointClick ? "pointer" : "default" }}
+                  >
                     {val}
                   </td>
                 );
