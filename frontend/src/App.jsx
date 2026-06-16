@@ -149,6 +149,21 @@ export default function App() {
   const [selectedSections, setSelectedSections] = useState(["KPIs", "Contracts", "Assets"]);
   const [permalink, setPermalink]     = useState("");
   const [reportDrilldown, setReportDrilldown] = useState(null);
+  const [guidedOpen, setGuidedOpen]   = useState(false);
+  const [guidedFlow, setGuidedFlow]   = useState({
+    scopeContract: "all", // all | C-100 | C-101 | C-200
+    period: "month",
+    language: "en",
+    region: "",
+    combinedReport: true,
+    includeKpi: true,
+    includeInvoicing: true,
+    includeActions: true,
+    includeContractDetails: true,
+    includeWorkOrders: false,
+    level: "summary", // summary | detailed
+    chartPref: "bar",
+  });
   const [loading, setLoading]         = useState(false);
   const [templatesSaved, setTemplatesSaved] = useState([]);
   const [aliases, setAliases]         = useState({ "A-900": "North Chiller", "A-901": "East Compressor" });
@@ -254,6 +269,27 @@ export default function App() {
 
   const toggleSection = (s) =>
     setSelectedSections((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s]);
+
+  const applyGuidedFlow = () => {
+    const nextSections = [];
+    if (guidedFlow.includeKpi) nextSections.push("KPIs");
+    if (guidedFlow.includeContractDetails) nextSections.push("Contracts");
+    if (guidedFlow.includeWorkOrders) nextSections.push("Assets");
+    if (guidedFlow.includeInvoicing) nextSections.push("Invoices");
+    if (guidedFlow.includeActions) nextSections.push("Opportunities");
+
+    if (nextSections.length) setSelectedSections(nextSections);
+    setOutputMode(guidedFlow.level);
+    setReportChartType(guidedFlow.chartPref);
+    setFilters((prev) => ({
+      ...prev,
+      rangePreset: guidedFlow.period,
+      language: guidedFlow.language,
+      region: guidedFlow.region,
+      contract: guidedFlow.scopeContract === "all" ? "" : guidedFlow.scopeContract,
+    }));
+    loadData();
+  };
 
   useEffect(() => {
     // Clear drilldown when report context changes
@@ -893,6 +929,105 @@ export default function App() {
               <div className="page-header">
                 <div className="page-greeting">Report Builder</div>
                 <div className="page-subtitle">Configure, generate, export, and share reports</div>
+              </div>
+
+              <div className="card" style={{ borderLeft: "4px solid var(--hw-red)", marginBottom: 16 }}>
+                <div className="card-header">
+                  <div>
+                    <div className="card-title">Guided Report Flow (Beta)</div>
+                    <div className="card-subtitle">Optional wizard mapped to your process flow. Existing builder below is unchanged.</div>
+                  </div>
+                  <div className="button-row">
+                    <button className={guidedOpen ? "btn-secondary btn-sm" : "btn-primary btn-sm"} onClick={() => setGuidedOpen((v) => !v)}>
+                      {guidedOpen ? "Hide" : "Open"}
+                    </button>
+                    <button className="btn-primary btn-sm" onClick={applyGuidedFlow}>Apply to Existing Builder</button>
+                  </div>
+                </div>
+                {guidedOpen && (
+                  <>
+                    <div className="filter-row" style={{ marginTop: 8 }}>
+                      <div className="filter-group">
+                        <label className="filter-label">Contract Scope</label>
+                        <select value={guidedFlow.scopeContract} onChange={(e) => setGuidedFlow((p) => ({ ...p, scopeContract: e.target.value }))}>
+                          <option value="all">All Contracts</option>
+                          <option value="C-100">C-100</option>
+                          <option value="C-101">C-101</option>
+                          <option value="C-200">C-200</option>
+                        </select>
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Period</label>
+                        <select value={guidedFlow.period} onChange={(e) => setGuidedFlow((p) => ({ ...p, period: e.target.value }))}>
+                          <option value="month">This Month</option>
+                          <option value="quarter">This Quarter</option>
+                          <option value="ytd">YTD</option>
+                          <option value="rolling13m">Rolling 13 Months</option>
+                        </select>
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Language</label>
+                        <select value={guidedFlow.language} onChange={(e) => setGuidedFlow((p) => ({ ...p, language: e.target.value }))}>
+                          <option value="en">English</option>
+                          <option value="de">Deutsch</option>
+                          <option value="fr">Français</option>
+                          <option value="es">Español</option>
+                        </select>
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Region</label>
+                        <select value={guidedFlow.region} onChange={(e) => setGuidedFlow((p) => ({ ...p, region: e.target.value }))}>
+                          <option value="">All</option>
+                          <option value="NA">North America</option>
+                          <option value="EU">Europe</option>
+                          <option value="APAC">APAC</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="filter-row" style={{ marginTop: 4 }}>
+                      <div className="filter-group">
+                        <label className="filter-label">Report Granularity</label>
+                        <select value={guidedFlow.combinedReport ? "combined" : "individual"} onChange={(e) => setGuidedFlow((p) => ({ ...p, combinedReport: e.target.value === "combined" }))}>
+                          <option value="combined">Combined Report</option>
+                          <option value="individual">Per-Contract Report</option>
+                        </select>
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Level</label>
+                        <select value={guidedFlow.level} onChange={(e) => setGuidedFlow((p) => ({ ...p, level: e.target.value }))}>
+                          <option value="summary">Summary</option>
+                          <option value="detailed">Detailed</option>
+                        </select>
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Default Chart</label>
+                        <select value={guidedFlow.chartPref} onChange={(e) => setGuidedFlow((p) => ({ ...p, chartPref: e.target.value }))}>
+                          <option value="bar">Bar</option>
+                          <option value="line">Line</option>
+                          <option value="pie">Pie</option>
+                          <option value="heatmap">Heatmap</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                      {[ 
+                        ["includeKpi", "KPI"],
+                        ["includeInvoicing", "Invoicing"],
+                        ["includeActions", "Actions"],
+                        ["includeContractDetails", "Contract Details"],
+                        ["includeWorkOrders", "Work Orders"],
+                      ].map(([key, label]) => (
+                        <button
+                          key={key}
+                          className={guidedFlow[key] ? "btn-primary btn-sm" : "btn-secondary btn-sm"}
+                          onClick={() => setGuidedFlow((p) => ({ ...p, [key]: !p[key] }))}
+                        >
+                          {guidedFlow[key] ? "Include" : "Exclude"} {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <FilterPanel
