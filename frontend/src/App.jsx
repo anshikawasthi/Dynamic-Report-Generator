@@ -284,10 +284,13 @@ export default function App() {
       .replace(/\//g, "_")
       .replace(/=+$/g, "");
     const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    const reportId = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `RPT-${Date.now()}`;
 
     return {
-      reportId: `RPT-${Date.now()}`,
-      reportUrl: `${baseUrl}/api/reports/shared/snapshot?d=${encoded}`,
+      reportId,
+      reportUrl: `${baseUrl}/report/${reportId}?d=${encoded}`,
       customerName: form.customerName,
       contractId: form.contractId,
     };
