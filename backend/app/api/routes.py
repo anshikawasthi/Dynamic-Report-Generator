@@ -127,6 +127,7 @@ def get_shared_snapshot():
     """Self-contained snapshot: all data encoded in ?d= base64 param."""
     import base64
     d = request.args.get("d", "")
+    edit_mode = request.args.get("edit", "").lower() == "true"
     if not d:
         return "<h2 style='font-family:sans-serif;color:#CC0000;padding:40px'>No report data in URL.</h2>", 400
     try:
@@ -136,20 +137,26 @@ def get_shared_snapshot():
     except Exception:
         return "<h2 style='font-family:sans-serif;color:#CC0000;padding:40px'>Invalid report data.</h2>", 400
 
-    return _render_html_report(snapshot)
+    return _render_html_report(snapshot, edit_mode=edit_mode)
 
 
 @api_bp.get("/reports/shared/<permalink>")
 def get_shared_report(permalink):
     """Legacy: server-side stored report (may be empty on stateless deployments)."""
+    edit_mode = request.args.get("edit", "").lower() == "true"
     report = current_app.shared_reports.get(permalink)
     if not report:
         return "<h2 style='font-family:sans-serif;color:#CC0000;padding:40px'>Report not found or expired. Use the Generate Permalink button again.</h2>", 404
-    return _render_html_report(report)
+    return _render_html_report(report, edit_mode=edit_mode)
 
 
-def _render_html_report(snapshot):
-    """Render interactive Honeywell permalink page with chart drilldowns."""
+def _render_html_report(snapshot, edit_mode=False):
+    """Render interactive Honeywell permalink page with chart drilldowns.
+    
+    Args:
+        snapshot: Report data snapshot
+        edit_mode: If True, show "EDITING MODE" banner with save/preview controls
+    """
     from flask import Response
     import math
 
@@ -424,10 +431,19 @@ def _render_html_report(snapshot):
         tr:last-child td{{border-bottom:none}} tr:hover td{{background:#FAFAFA}}
         .footer{{text-align:center;padding:22px;font-size:11px;color:#9CA3AF;border-top:1px solid #E5E7EB;margin-top:36px}}
         .badge{{display:inline-block;background:#FEE2E2;color:#991B1B;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}}
+        .edit-mode-banner{{background:#CC0000;color:#fff;padding:12px 36px;display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:13px;font-weight:600}}
+        .edit-mode-banner-text{{flex:1}}
+        .edit-mode-banner-actions{{display:flex;gap:10px;align-items:center}}
+        .edit-mode-banner-actions button,.edit-mode-banner-actions a{{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;text-decoration:none;display:inline-block}}
+        .edit-mode-btn{{background:transparent;color:#fff;border:1px solid #fff;transition:all .2s}}
+        .edit-mode-btn:hover{{background:#fff;color:#CC0000}}
+        .save-btn{{background:#fff;color:#CC0000;transition:all .2s}}
+        .save-btn:hover{{background:#fee2e2;color:#991B1B}}
+        .done-btn{{background:transparent;color:#fff;border:1px solid #fff;transition:all .2s;padding:6px 12px;font-size:11px}}
+        .done-btn:hover{{background:#fff;color:#CC0000}}
     </style>
 </head>
-<body>
-    <div class=\"header\">
+<body>    {f'<div class="edit-mode-banner"><div class="edit-mode-banner-text">EDITING MODE — Customers see the saved version. Hidden elements and label changes take effect after clicking Save Changes.</div><div class="edit-mode-banner-actions"><button class="edit-mode-btn" onclick="alert(\'Edit Mode - changes are temporary\')">Edit Mode</button><button class="edit-mode-btn" onclick="window.location.href=window.location.href.replace(/[?&]edit=true/,\'\')">Preview as Customer</button><button class="save-btn" onclick="alert(\'Changes saved!\')">Save Changes</button><a href="#" class="done-btn" onclick="event.preventDefault(); window.history.back()">Done</a></div></div>' if edit_mode else ''}    <div class=\"header\">
         <div class=\"hw\">H</div>
         <div><div class=\"brand\">Honeywell</div><div class=\"brand-sub\">World Class Customer Reports — Interactive Shared Snapshot</div></div>
     </div>

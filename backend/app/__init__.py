@@ -47,24 +47,26 @@ def create_app():
 
     @app.get("/report/<report_id>")
     def report_permalink(report_id):
-        """Portal-compatible permalink route: /report/<id>?d=<encoded snapshot>."""
+        """Portal-compatible permalink route: /report/<id>?d=<encoded snapshot>&edit=true."""
         import base64
         import json
 
         encoded = request.args.get("d", "")
+        edit_mode = request.args.get("edit", "").lower() == "true"
+        
         if encoded:
             try:
                 padded = encoded + "=" * (-len(encoded) % 4)
                 decoded = base64.urlsafe_b64decode(padded.encode()).decode("utf-8")
                 snapshot = json.loads(decoded)
-                return _render_html_report(snapshot)
+                return _render_html_report(snapshot, edit_mode=edit_mode)
             except Exception:
                 return "<h2 style='font-family:sans-serif;color:#CC0000;padding:40px'>Invalid report data.</h2>", 400
 
         # Fallback for non-snapshot links in stateful local runs.
         report = app.shared_reports.get(report_id)
         if report:
-            return _render_html_report(report)
+            return _render_html_report(report, edit_mode=edit_mode)
         return "<h2 style='font-family:sans-serif;color:#CC0000;padding:40px'>Report not found or expired. Generate a new link.</h2>", 404
 
     return app
