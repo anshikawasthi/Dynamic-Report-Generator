@@ -16,7 +16,8 @@ const KPI_META = {
 
 function decodeSnapshot(d) {
   try {
-    const padded = d + "=".repeat((-d.length) % 4);
+    const padding = (4 - (d.length % 4)) % 4;
+    const padded = d + "=".repeat(padding);
     const base64 = padded.replace(/-/g, "+").replace(/_/g, "/");
     const json = atob(base64);
     return JSON.parse(json);
