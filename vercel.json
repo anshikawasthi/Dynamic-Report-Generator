@@ -17,11 +17,15 @@
     },
     {
       "src": "/report/(.*)",
-      "dest": "/api/index.py"
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*\\.(js|css|svg|png|ico|woff2?))",
+      "dest": "/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/index.html"
     }
   ]
 }
