@@ -169,6 +169,13 @@ def _render_html_report(snapshot, edit_mode=False):
     role = snapshot.get("role", "")
     total_records = snapshot.get("totalRecords", len(data))
     generated_at = snapshot.get("generatedAt", "")[:19].replace("T", " ") + " UTC"
+    
+    # Customer portal details
+    customer_name = snapshot.get("customerName", "")
+    contract_id = snapshot.get("contractId", "")
+    customer_email = snapshot.get("customerEmail", "")
+    report_type = snapshot.get("reportType", "")
+    report_type_display = report_type.replace("_", " ").title() if report_type else ""
 
     kpi_avgs = {k: v for k, v in kpi_summary.items() if v is not None}
     if not kpi_avgs and data:
@@ -448,6 +455,10 @@ def _render_html_report(snapshot, edit_mode=False):
         <div><div class=\"brand\">Honeywell</div><div class=\"brand-sub\">World Class Customer Reports — Interactive Shared Snapshot</div></div>
     </div>
     <div class=\"meta\">
+        {f'<span><b>Service Contract:</b> {contract_id}</span>' if contract_id else ''}
+        {f'<span><b>Customer:</b> {customer_name}</span>' if customer_name else ''}
+        {f'<span><b>Email:</b> {customer_email}</span>' if customer_email else ''}
+        {f'<span><b>Report Type:</b> {report_type_display}</span>' if report_type_display else ''}
         <span><b>Generated:</b> {generated_at}</span>
         <span><b>Records:</b> {total_records}</span>
         <span><b>Sites:</b> {sites_list}</span>
