@@ -670,6 +670,7 @@ pre {
   flex-direction: column;
   border-style: solid;
   border-color: #d22630;
+  font-family: "Honeywell Sans", "HoneywellSans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Edit mode top banner */
@@ -677,13 +678,18 @@ pre {
   background: #d22630;
   color: #fff;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 8px 24px;
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
   letter-spacing: .02em;
+}
+.rv-banner-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .rv-edit-banner-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
 .rv-edit-btn-outline {
@@ -708,7 +714,7 @@ pre {
 .rv-header {
   background: #fff;
   border-bottom: 1px solid #E5E7EB;
-  padding: 18px 24px;
+  padding: 16px 24px;
 }
 .rv-header-inner {
   max-width: 1200px;
@@ -718,8 +724,8 @@ pre {
   justify-content: space-between;
   gap: 16px;
 }
-.rv-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.rv-title { font-size: 20px; font-weight: 700; color: #111827; }
+.rv-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.rv-title { font-size: 20px; font-weight: 700; color: #000000; letter-spacing: -.01em; }
 .rv-icon-btn {
   background: none; border: none; cursor: pointer; color: #9CA3AF; padding: 4px;
   border-radius: 4px; display: flex;
@@ -735,15 +741,48 @@ pre {
 .rv-dot { color: #D1D5DB; }
 .rv-header-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .rv-btn-ask-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #F3F4F6; color: #374151; border: none; border-radius: 8px;
   padding: 8px 14px; font-size: 12px; font-weight: 500; cursor: pointer;
 }
 .rv-btn-ask-ai:hover { background: #E5E7EB; }
 .rv-btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #1F2937; color: #fff; border: none; border-radius: 8px;
   padding: 8px 14px; font-size: 12px; font-weight: 500; cursor: pointer;
 }
 .rv-btn-export:hover { background: #111827; }
+
+.rv-export-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  min-width: 180px;
+  overflow: hidden;
+}
+.rv-export-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #374151;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #F3F4F6;
+  cursor: pointer;
+  text-align: left;
+}
 
 /* Tabs */
 .rv-tabs { background: #fff; border-bottom: 1px solid #E5E7EB; }
@@ -819,17 +858,42 @@ pre {
 .rv-kpi-card {
   background: #fff;
   border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  padding: 18px;
+  border-radius: 10px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   transition: box-shadow .15s;
 }
+.rv-kpi-card-hidden {
+  opacity: 0.55;
+}
+.rv-kpi-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.rv-kpi-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  color: #4B5563;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.rv-kpi-action-btn:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+}
 .rv-kpi-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-.rv-kpi-icon { font-size: 20px; }
+.rv-kpi-icon { font-size: 20px; display: inline-flex; align-items: center; margin-bottom: 2px; color: #000000; }
 .rv-kpi-label { font-size: 11px; color: #6B7280; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
-.rv-kpi-value { font-size: 36px; font-weight: 800; line-height: 1.1; }
+.rv-kpi-value { font-size: 36px; font-weight: 800; line-height: 1.1; color: #000000; }
 .rv-kpi-unit { font-size: 14px; font-weight: 400; color: #9CA3AF; }
 .rv-kpi-meta-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
 .rv-kpi-meta-key { color: #9CA3AF; width: 32px; }
@@ -851,7 +915,7 @@ pre {
   background: #fff;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
-  padding: 20px;
+  padding: 18px;
 }
 .rv-chart-header {
   display: flex;
@@ -859,18 +923,53 @@ pre {
   justify-content: space-between;
   margin-bottom: 16px;
 }
-.rv-chart-title { font-size: 14px; font-weight: 700; color: #111827; }
+.rv-chart-title { font-size: 14px; font-weight: 700; color: #000000; }
 .rv-chart-sub { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
 .rv-chart-toggle { display: flex; gap: 4px; }
 .rv-toggle-btn {
   background: none; border: 1px solid #E5E7EB; border-radius: 6px;
   padding: 5px 10px; font-size: 11px; font-weight: 500; color: #6B7280; cursor: pointer;
+  min-width: 48px;
 }
 .rv-toggle-btn:hover { background: #F3F4F6; }
 .rv-toggle-active { background: #1F2937 !important; color: #fff !important; border-color: #1F2937 !important; }
 .rv-chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
 .rv-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6B7280; }
 .rv-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rv-legend-text { font-size: 11px; color: #6B7280; }
+.rv-recharts-wrap { width: 100%; height: 280px; }
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #F3F4F6;
+}
+.recharts-reference-line-line {
+  stroke: #D1D5DB;
+}
+.recharts-default-legend {
+  margin-top: 2px !important;
+}
+.rv-chart-tooltip {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  padding: 10px 12px;
+  min-width: 150px;
+}
+.rv-chart-tooltip-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+.rv-chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: #4B5563;
+}
 .rv-no-data { padding: 40px; text-align: center; color: #9CA3AF; font-size: 13px; }
 
 /* Table */
@@ -904,7 +1003,7 @@ pre {
 }
 .rv-asset-row:hover { background: #F9FAFB; }
 .rv-asset-row:last-child { border-bottom: none; }
-.rv-asset-icon { font-size: 16px; }
+.rv-asset-icon { font-size: 16px; display: inline-flex; align-items: center; }
 .rv-asset-type { color: #9CA3AF; }
 .rv-asset-tier { color: #6B7280; }
 .rv-asset-risk { color: #DC2626; font-weight: 600; }

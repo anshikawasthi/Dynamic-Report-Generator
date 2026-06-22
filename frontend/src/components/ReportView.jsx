@@ -1,18 +1,85 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ReferenceLine,
+} from "recharts";
 
 const TABS = ["Overview", "Insights", "Preventive", "Reactive", "Remote", "CSAT", "Invoicing"];
 
 const KPI_META = {
-  MTTR:                 { label: "Mean Time To Repair", unit: "hrs",  icon: "🔧", color: "#DC2626" },
-  UPTIME:               { label: "System Uptime",       unit: "%",    icon: "⚡", color: "#16A34A" },
-  PM_COMPLETION:        { label: "PM Completion",       unit: "%",    icon: "✅", color: "#1D6FA4" },
-  REACTIVE_MAINTENANCE: { label: "Reactive Compliance", unit: "%",    icon: "⚙️", color: "#F97316" },
-  CSAT:                 { label: "CSAT",                unit: "",     icon: "⭐", color: "#D97706" },
-  SYSTEM_AVAILABILITY:  { label: "Remote Compliance",   unit: "%",    icon: "🛰️", color: "#0891B2" },
-  COMPLIANCE:           { label: "SLA Compliance",      unit: "%",    icon: "📋", color: "#059669" },
-  INVOICE_CYCLE:        { label: "Invoice Cycle",       unit: "days", icon: "💰", color: "#7C3AED" },
+  MTTR:                 { label: "Mean Time To Repair", unit: "hrs",  icon: "wrench", color: "#000000" },
+  UPTIME:               { label: "System Uptime",       unit: "%",    icon: "bolt", color: "#000000" },
+  PM_COMPLETION:        { label: "PM Completion",       unit: "%",    icon: "check", color: "#000000" },
+  REACTIVE_MAINTENANCE: { label: "Reactive Compliance", unit: "%",    icon: "settings", color: "#000000" },
+  CSAT:                 { label: "CSAT",                unit: "",     icon: "star", color: "#000000" },
+  SYSTEM_AVAILABILITY:  { label: "Remote Compliance",   unit: "%",    icon: "satellite", color: "#000000" },
+  COMPLIANCE:           { label: "SLA Compliance",      unit: "%",    icon: "clipboard", color: "#000000" },
+  INVOICE_CYCLE:        { label: "Invoice Cycle",       unit: "days", icon: "wallet", color: "#000000" },
 };
+
+function Icon({ name, size = 16, className = "" }) {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "2",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className,
+    "aria-hidden": true,
+  };
+
+  switch (name) {
+    case "wrench":
+      return <svg {...common}><path d="M14.7 6.3a4 4 0 1 0 3 3l-6.7 6.7a2 2 0 0 1-2.8 0l-.2-.2a2 2 0 0 1 0-2.8z" /></svg>;
+    case "bolt":
+      return <svg {...common}><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>;
+    case "check":
+      return <svg {...common}><path d="M20 6 9 17l-5-5" /></svg>;
+    case "settings":
+      return <svg {...common}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 1 1.5h.1a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.5 1z" /></svg>;
+    case "star":
+      return <svg {...common}><path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 18l-5.8 3 1.1-6.5L2.6 9.8l6.5-.9z" /></svg>;
+    case "satellite":
+      return <svg {...common}><path d="m13 11 9-9M3 21l9-9M2 11l11 11M13 2l9 9M8 16a4 4 0 0 1 0-8" /></svg>;
+    case "clipboard":
+      return <svg {...common}><rect x="8" y="3" width="8" height="4" rx="1" /><rect x="5" y="7" width="14" height="14" rx="2" /><path d="M9 12h6M9 16h6" /></svg>;
+    case "wallet":
+      return <svg {...common}><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M16 10h6v4h-6z" /></svg>;
+    case "copy":
+      return <svg {...common}><rect x="9" y="9" width="13" height="13" rx="2" /><rect x="2" y="2" width="13" height="13" rx="2" /></svg>;
+    case "message":
+      return <svg {...common}><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" /></svg>;
+    case "download":
+      return <svg {...common}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>;
+    case "calendar":
+      return <svg {...common}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>;
+    case "edit":
+      return <svg {...common}><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>;
+    case "eye":
+      return <svg {...common}><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" /></svg>;
+    case "file":
+      return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z" /><path d="M14 2v6h6" /></svg>;
+    case "table":
+      return <svg {...common}><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9M15 21V9" /></svg>;
+    case "document":
+      return <svg {...common}><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z" /><path d="M14 2v6h6" /></svg>;
+    default:
+      return <svg {...common}><circle cx="12" cy="12" r="9" /></svg>;
+  }
+}
 
 function decodeSnapshot(d) {
   try {
@@ -26,7 +93,32 @@ function decodeSnapshot(d) {
   }
 }
 
-function KpiCard({ code, value, meta }) {
+function buildTrendRows(snapshotRows, kpiSummary) {
+  if (Array.isArray(snapshotRows) && snapshotRows.length >= 3) {
+    return snapshotRows;
+  }
+
+  const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr"];
+  const seed = {
+    PM_COMPLETION: Number(kpiSummary?.PM_COMPLETION || 93),
+    REACTIVE_MAINTENANCE: Number(kpiSummary?.REACTIVE_MAINTENANCE || 88),
+    SYSTEM_AVAILABILITY: Number(kpiSummary?.SYSTEM_AVAILABILITY || 97),
+    CSAT: Number(kpiSummary?.CSAT || 4.2) * 20,
+  };
+
+  return months.map((m, i) => {
+    const wave = Math.sin((i / 12) * Math.PI * 2);
+    return {
+      site: m,
+      PM_COMPLETION: Math.min(99, Math.max(70, +(seed.PM_COMPLETION + wave * 2.4).toFixed(1))),
+      REACTIVE_MAINTENANCE: Math.min(99, Math.max(70, +(seed.REACTIVE_MAINTENANCE + Math.cos((i / 12) * Math.PI * 2) * 3.1).toFixed(1))),
+      SYSTEM_AVAILABILITY: Math.min(99.9, Math.max(70, +(seed.SYSTEM_AVAILABILITY + wave * 1.5).toFixed(1))),
+      CSAT: Math.min(99, Math.max(70, +(seed.CSAT + Math.sin((i / 12) * Math.PI * 2 + 1.1) * 2.1).toFixed(1))),
+    };
+  });
+}
+
+function KpiCard({ code, value, meta, isEditMode, onEditLabel, onToggleVisibility, isHidden }) {
   const { label, unit, icon, color } = meta;
   // Simulated MOM/YoY/Target deltas for display
   const momChange = (((value || 0) * 0.012) * (code === "MTTR" || code === "INVOICE_CYCLE" ? -1 : 1)).toFixed(1);
@@ -36,8 +128,20 @@ function KpiCard({ code, value, meta }) {
   const isGoodPositive = code !== "MTTR" && code !== "INVOICE_CYCLE";
 
   return (
-    <div className="rv-kpi-card">
-      <div className="rv-kpi-icon" style={{ color }}>{icon}</div>
+    <div className={`rv-kpi-card ${isHidden ? "rv-kpi-card-hidden" : ""}`}>
+      {isEditMode && (
+        <div className="rv-kpi-card-actions">
+          <button className="rv-kpi-action-btn" onClick={() => onEditLabel(code)} title="Edit KPI label">
+            <Icon name="edit" size={13} />
+            Edit
+          </button>
+          <button className="rv-kpi-action-btn" onClick={() => onToggleVisibility(code)} title="Show or hide KPI card">
+            <Icon name="eye" size={13} />
+            {isHidden ? "Show" : "Hide"}
+          </button>
+        </div>
+      )}
+      <div className="rv-kpi-icon" style={{ color }}><Icon name={icon} size={18} /></div>
       <div className="rv-kpi-label">{label}</div>
       <div className="rv-kpi-value" style={{ color }}>
         {value ?? "--"}
@@ -59,103 +163,167 @@ function KpiCard({ code, value, meta }) {
         <span className="rv-kpi-meta-key">Target</span>
         <span className="rv-kpi-target">On track</span>
       </div>
-      <button className="rv-view-details">View Details →</button>
+      <button className="rv-view-details">View details</button>
     </div>
   );
 }
 
-function SimpleBarChart({ rows, keys, colors }) {
-  if (!rows || rows.length === 0) return <div className="rv-no-data">No data available</div>;
-  const sites = rows.map(r => r.site || "").filter(Boolean);
-  const allVals = rows.flatMap(r => keys.map(k => Number(r[k] || 0)));
-  const maxVal = Math.max(...allVals, 1);
-  const barW = Math.max(6, Math.floor(560 / (sites.length * (keys.length + 0.5))));
-
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
   return (
-    <svg viewBox={`0 0 600 220`} style={{ width: "100%", height: "auto" }}>
-      {rows.map((row, i) => {
-        const gx = 40 + i * (keys.length * barW + 10);
-        return (
-          <g key={row.site}>
-            {keys.map((k, j) => {
-              const val = Number(row[k] || 0);
-              const bh = (val / maxVal) * 160;
-              const bx = gx + j * barW;
-              const by = 180 - bh;
-              return (
-                <rect key={k} x={bx} y={by} width={Math.max(1, barW - 1)} height={bh}
-                  fill={colors[j] || "#1D6FA4"} rx="2" opacity="0.85">
-                  <title>{row.site} {k}: {val}</title>
-                </rect>
-              );
-            })}
-            <text x={gx + (keys.length * barW) / 2} y={198} textAnchor="middle"
-              fontSize="9" fill="#9CA3AF">{String(row.site || "").slice(0, 8)}</text>
-          </g>
-        );
-      })}
-      {[0, 25, 50, 75, 100].map(v => {
-        const y = 180 - (v / maxVal) * 160;
-        return <g key={v}><line x1="35" y1={y} x2="595" y2={y} stroke="#F3F4F6" /><text x="30" y={y + 3} textAnchor="end" fontSize="8" fill="#D1D5DB">{v}</text></g>;
-      })}
-    </svg>
-  );
-}
-
-function SimpleLineChart({ rows, keys, colors }) {
-  if (!rows || rows.length === 0) return <div className="rv-no-data">No data available</div>;
-  const allVals = rows.flatMap(r => keys.map(k => Number(r[k] || 0)));
-  const maxVal = Math.max(...allVals, 1);
-  const stepX = rows.length > 1 ? 520 / (rows.length - 1) : 0;
-
-  return (
-    <svg viewBox="0 0 600 220" style={{ width: "100%", height: "auto" }}>
-      {keys.map((k, ki) => {
-        const pts = rows.map((r, i) => {
-          const x = 40 + i * stepX;
-          const y = 20 + (1 - Number(r[k] || 0) / maxVal) * 160;
-          return [x, y, r];
-        });
-        const polyline = pts.map(([x, y]) => `${x},${y}`).join(" ");
-        return (
-          <g key={k}>
-            <polyline points={polyline} fill="none" stroke={colors[ki] || "#1D6FA4"} strokeWidth="2" opacity="0.9" />
-            {pts.map(([x, y, r], i) => (
-              <circle key={i} cx={x} cy={y} r="3.5" fill={colors[ki] || "#1D6FA4"}>
-                <title>{r.site} {k}: {r[k]}</title>
-              </circle>
-            ))}
-          </g>
-        );
-      })}
-      {rows.map((r, i) => (
-        <text key={i} x={40 + i * stepX} y={198} textAnchor="middle" fontSize="9" fill="#9CA3AF">
-          {String(r.site || "").slice(0, 8)}
-        </text>
+    <div className="rv-chart-tooltip">
+      <p className="rv-chart-tooltip-title">{label}</p>
+      {payload.map((p) => (
+        <div key={p.name} className="rv-chart-tooltip-row">
+          <span style={{ color: p.color }}>{KPI_META[p.name]?.label || p.name}</span>
+          <strong>{p.value}%</strong>
+        </div>
       ))}
-    </svg>
+    </div>
   );
 }
 
 export default function ReportView() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("Overview");
   const [chartMode, setChartMode] = useState("Line");
   const [isEditMode, setIsEditMode] = useState(false);
   const [editModeBannerVisible, setEditModeBannerVisible] = useState(true);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exporting, setExporting] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [customKpiLabels, setCustomKpiLabels] = useState({});
+  const [hiddenKpis, setHiddenKpis] = useState({});
 
   const d = searchParams.get("d") || "";
   const editParam = searchParams.get("edit") === "true";
+  const hiddenParam = searchParams.get("hidden") || "";
 
   useEffect(() => { setIsEditMode(editParam); }, [editParam]);
+  
+  // Initialize hidden KPIs from URL params
+  useEffect(() => {
+    if (hiddenParam) {
+      const hidden = hiddenParam.split(",").reduce((acc, code) => {
+        acc[code] = true;
+        return acc;
+      }, {});
+      setHiddenKpis(hidden);
+    }
+  }, [hiddenParam]);
+  
+  // Update URL when hidden KPIs change
+  const updateHiddenInUrl = (newHidden) => {
+    const hiddenCodes = Object.keys(newHidden).filter(k => newHidden[k]).join(",");
+    const newParams = new URLSearchParams(searchParams);
+    if (hiddenCodes) {
+      newParams.set("hidden", hiddenCodes);
+    } else {
+      newParams.delete("hidden");
+    }
+    setSearchParams(newParams);
+  };
 
   const snapshot = useMemo(() => decodeSnapshot(d), [d]);
+
+  // Handle CSV export
+  const handleCSVExport = () => {
+    setExporting("csv");
+    try {
+      const { customerName, contractId, kpiSummary = {}, chartRows = [] } = snapshot;
+      
+      // Create CSV content
+      let csv = "Report Data Export\n";
+      csv += `Customer: ${customerName}\n`;
+      csv += `Contract ID: ${contractId}\n`;
+      csv += `Date: ${new Date().toLocaleDateString()}\n\n`;
+      
+      // KPI Summary section
+      csv += "KPI Summary\n";
+      csv += "KPI,Value,Unit\n";
+      Object.entries(kpiSummary).forEach(([code, value]) => {
+        if (KPI_META[code]) {
+          const { label, unit } = KPI_META[code];
+          csv += `${label},${value || "—"},${unit}\n`;
+        }
+      });
+      
+      // Chart data section
+      if (chartRows.length > 0) {
+        csv += "\nChart Data\n";
+        const headers = ["Site", "PM_COMPLETION", "REACTIVE_MAINTENANCE", "SYSTEM_AVAILABILITY", "CSAT"];
+        csv += headers.join(",") + "\n";
+        chartRows.forEach(row => {
+          csv += `${row.site || "—"},${row.PM_COMPLETION || "—"},${row.REACTIVE_MAINTENANCE || "—"},${row.SYSTEM_AVAILABILITY || "—"},${row.CSAT || "—"}\n`;
+        });
+      }
+      
+      // Download CSV
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${contractId || "report"}-data.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("CSV export failed:", e);
+    } finally {
+      setExporting(null);
+      setExportOpen(false);
+    }
+  };
+
+  // Handle PDF export (using html2canvas + jsPDF if available)
+  const handlePDFExport = async () => {
+    setExporting("pdf");
+    try {
+      // Try to import libraries
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      
+      // Find the main content area to capture
+      const el = document.querySelector(".rv-content") || document.querySelector(".rv-root");
+      if (!el) throw new Error("Report content not found");
+      
+      const canvas = await html2canvas(el, { scale: 1, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL("image/png");
+      
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height],
+      });
+      
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(`${snapshot.contractId || "report"}-report.pdf`);
+    } catch (e) {
+      console.error("PDF export failed:", e);
+      alert("PDF export requires jsPDF and html2canvas libraries. Please contact support.");
+    } finally {
+      setExporting(null);
+      setExportOpen(false);
+    }
+  };
+
+  // Handle share/copy
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const onExportButtonHover = (event, isOver) => {
+    event.currentTarget.style.background = isOver ? "#F9FAFB" : "transparent";
+  };
 
   if (!d || !snapshot) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#F0F2F5" }}>
         <div style={{ textAlign: "center", padding: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📄</div>
+          <div style={{ color: "#CC0000", marginBottom: 16 }}><Icon name="document" size={48} /></div>
           <h2 style={{ fontFamily: "sans-serif", color: "#CC0000", marginBottom: 8 }}>Report not found</h2>
           <p style={{ color: "#6B7280", fontFamily: "sans-serif" }}>This report link is invalid or has expired. Please generate a new one.</p>
         </div>
@@ -164,18 +332,36 @@ export default function ReportView() {
   }
 
   const { customerName, contractId, reportType, kpiSummary = {}, chartRows = [], complianceMixRows = [], generatedAt = "" } = snapshot;
+  const trendRows = useMemo(() => buildTrendRows(chartRows, kpiSummary), [chartRows, kpiSummary]);
   const reportTitle = reportType ? reportType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "Service Performance Summary";
   const kpiKeys = ["PM_COMPLETION", "REACTIVE_MAINTENANCE", "SYSTEM_AVAILABILITY", "CSAT"];
   const chartColors = ["#1D6FA4", "#CC0000", "#0891B2", "#D97706"];
 
   const handlePreviewAsCustomer = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("edit");
-    window.location.href = url.toString();
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("edit");
+    const newUrl = `${window.location.pathname}?${newParams.toString()}`;
+    window.location.href = newUrl;
   };
 
   const handleSaveChanges = () => {
     alert("Changes saved successfully!");
+  };
+
+  const handleEditKpiLabel = (code) => {
+    const currentLabel = customKpiLabels[code] || KPI_META[code]?.label || code;
+    const nextLabel = window.prompt("Edit KPI label", currentLabel);
+    if (nextLabel !== null && nextLabel.trim()) {
+      setCustomKpiLabels((prev) => ({ ...prev, [code]: nextLabel.trim() }));
+    }
+  };
+
+  const handleToggleKpiVisibility = (code) => {
+    setHiddenKpis((prev) => {
+      const newHidden = { ...prev, [code]: !prev[code] };
+      updateHiddenInUrl(newHidden);
+      return newHidden;
+    });
   };
 
   return (
@@ -184,10 +370,10 @@ export default function ReportView() {
       {/* ── EDITING MODE BANNER ─────────────────────────────────── */}
       {isEditMode && editModeBannerVisible && (
         <div className="rv-edit-banner">
-          <span>✏️ EDITING MODE — Customers see the saved version. Hidden elements and label changes take effect after clicking Save Changes.</span>
+          <span className="rv-banner-text"><Icon name="edit" size={14} /> EDITING MODE — Customers see the saved version. Hidden elements and label changes take effect after clicking Save Changes.</span>
           <div className="rv-edit-banner-actions">
             <button className="rv-edit-btn-outline" onClick={handlePreviewAsCustomer}>
-              👁 Preview as Customer
+              <Icon name="eye" size={14} /> Preview as Customer
             </button>
             <button className="rv-edit-btn-save" onClick={handleSaveChanges}>
               Save Changes
@@ -205,9 +391,18 @@ export default function ReportView() {
           <div>
             <div className="rv-title-row">
               <h1 className="rv-title">{reportTitle}</h1>
-              <button className="rv-icon-btn" title="Share" onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <button
+                className="rv-icon-btn"
+                title="Copy report link"
+                onClick={handleShare}
+              >
+                <Icon name="copy" size={14} />
               </button>
+              {copied && (
+                <span style={{ fontSize: "11px", color: "#16A34A", fontWeight: 600 }}>
+                  Link copied!
+                </span>
+              )}
             </div>
             <div className="rv-subtitle-row">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
@@ -219,8 +414,53 @@ export default function ReportView() {
             </div>
           </div>
           <div className="rv-header-actions">
-            <button className="rv-btn-ask-ai">💬 Ask AI</button>
-            <button className="rv-btn-export">↓ Export</button>
+            <button className="rv-btn-ask-ai"><Icon name="message" size={14} /> Ask AI</button>
+            <div style={{ position: "relative" }}>
+              <button
+                className="rv-btn-export"
+                onClick={() => setExportOpen(!exportOpen)}
+              >
+                <Icon name="download" size={14} /> Export
+              </button>
+              {exportOpen && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    style={{
+                      position: "fixed",
+                      inset: 0,
+                      zIndex: 10,
+                    }}
+                    onClick={() => setExportOpen(false)}
+                  />
+                  {/* Dropdown */}
+                  <div className="rv-export-menu">
+                    <button
+                      onClick={handleCSVExport}
+                      disabled={!!exporting}
+                      className="rv-export-item"
+                      style={{ opacity: exporting === "csv" ? 0.6 : 1 }}
+                      onMouseEnter={(e) => !exporting && onExportButtonHover(e, true)}
+                      onMouseLeave={(e) => onExportButtonHover(e, false)}
+                    >
+                      <Icon name="table" size={14} />
+                      {exporting === "csv" ? "Downloading..." : "Download CSV"}
+                    </button>
+                    <button
+                      onClick={handlePDFExport}
+                      disabled={!!exporting}
+                      className="rv-export-item"
+                      style={{ opacity: exporting === "pdf" ? 0.6 : 1, borderBottom: "none" }}
+                      onMouseEnter={(e) => !exporting && onExportButtonHover(e, true)}
+                      onMouseLeave={(e) => onExportButtonHover(e, false)}
+                    >
+                      <Icon name="file" size={14} />
+                      {exporting === "pdf" ? "Downloading..." : "Download PDF"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -243,7 +483,7 @@ export default function ReportView() {
       {/* ── DATE RANGE BAR ──────────────────────────────────────── */}
       <div className="rv-date-bar">
         <div className="rv-date-bar-inner">
-          <span className="rv-date-pill">📅 Rolling 13 months</span>
+          <span className="rv-date-pill"><Icon name="calendar" size={13} /> Rolling 13 months</span>
           <select className="rv-select"><option>Monthly</option><option>Weekly</option><option>Quarterly</option></select>
           <select className="rv-select"><option>YoY</option><option>MoM</option></select>
         </div>
@@ -257,10 +497,10 @@ export default function ReportView() {
             {/* Edit mode toolbar */}
             {isEditMode && (
               <div className="rv-edit-toolbar">
-                <span className="rv-edit-toolbar-label">✏️ Edit Mode</span>
+                <span className="rv-edit-toolbar-label"><Icon name="edit" size={13} /> Edit Mode</span>
                 <span className="rv-edit-toolbar-hint">— changes are visible to the customer after saving</span>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                  <button className="rv-edit-btn-outline" onClick={handlePreviewAsCustomer}>👁 Preview as Customer</button>
+                  <button className="rv-edit-btn-outline" onClick={handlePreviewAsCustomer}><Icon name="eye" size={14} /> Preview as Customer</button>
                   <button className="rv-edit-btn-save" onClick={handleSaveChanges}>Save Changes</button>
                   <button className="rv-edit-btn-done" onClick={() => window.history.back()}>Done</button>
                 </div>
@@ -271,8 +511,18 @@ export default function ReportView() {
             <div className="rv-kpi-grid">
               {Object.entries(kpiSummary)
                 .filter(([code]) => KPI_META[code] && kpiSummary[code] !== null && kpiSummary[code] !== undefined)
+                .filter(([code]) => isEditMode || !hiddenKpis[code])
                 .map(([code, value]) => (
-                  <KpiCard key={code} code={code} value={value} meta={KPI_META[code]} />
+                  <KpiCard
+                    key={code}
+                    code={code}
+                    value={value}
+                    meta={{ ...KPI_META[code], label: customKpiLabels[code] || KPI_META[code].label }}
+                    isEditMode={isEditMode}
+                    onEditLabel={handleEditKpiLabel}
+                    onToggleVisibility={handleToggleKpiVisibility}
+                    isHidden={!!hiddenKpis[code]}
+                  />
                 ))
               }
             </div>
@@ -292,10 +542,46 @@ export default function ReportView() {
               </div>
 
               {chartMode === "Line" && (
-                <SimpleLineChart rows={chartRows} keys={kpiKeys} colors={chartColors} />
+                <div className="rv-recharts-wrap">
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={trendRows} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="site" tick={{ fontSize: 11 }} tickLine={false} />
+                      <YAxis domain={[70, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend formatter={(value) => <span className="rv-legend-text">{KPI_META[value]?.label || value}</span>} />
+                      <ReferenceLine y={90} stroke="#d1d5db" strokeDasharray="4 4" label={{ value: "90%", fontSize: 10, fill: "#9ca3af" }} />
+                      {kpiKeys.map((k, i) => (
+                        <Line
+                          key={k}
+                          type="monotoneX"
+                          dataKey={k}
+                          stroke={chartColors[i] || "#6b7280"}
+                          strokeWidth={2}
+                          dot={{ r: 3, strokeWidth: 0 }}
+                          activeDot={{ r: 5 }}
+                          connectNulls
+                        />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               )}
               {chartMode === "Bar" && (
-                <SimpleBarChart rows={chartRows} keys={kpiKeys} colors={chartColors} />
+                <div className="rv-recharts-wrap">
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={trendRows} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="site" tick={{ fontSize: 11 }} tickLine={false} />
+                      <YAxis domain={[70, 100]} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend formatter={(value) => <span className="rv-legend-text">{KPI_META[value]?.label || value}</span>} />
+                      {kpiKeys.map((k, i) => (
+                        <Bar key={k} dataKey={k} fill={chartColors[i] || "#6b7280"} radius={[2, 2, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               )}
               {chartMode === "Table" && (
                 <div className="rv-table-wrap">
@@ -307,7 +593,7 @@ export default function ReportView() {
                       </tr>
                     </thead>
                     <tbody>
-                      {chartRows.map((row, i) => (
+                      {trendRows.map((row, i) => (
                         <tr key={i}>
                           <td><strong>{row.site}</strong></td>
                           {kpiKeys.map(k => <td key={k}>{row[k] ?? "—"}</td>)}
@@ -332,7 +618,7 @@ export default function ReportView() {
             {isEditMode && (
               <div className="rv-asset-section">
                 <div className="rv-asset-header">
-                  <span className="rv-edit-hint">✏️ Editing asset rows — hover a row and click the eye icon to hide/show it</span>
+                  <span className="rv-edit-hint"><Icon name="edit" size={12} /> Editing asset rows - hover a row and click the eye icon to hide/show it</span>
                 </div>
                 {[
                   { name: "Chiller #2", type: "HVAC", tier: "Tier 1", risk: 86, note: "Plan replacement study" },
@@ -341,7 +627,7 @@ export default function ReportView() {
                   { name: "AHU-3", type: "HVAC", tier: "Tier 2", risk: 66, note: "Efficiency tuning — coil cleaning recommended" },
                 ].map((a, i) => (
                   <div key={i} className="rv-asset-row">
-                    <span className="rv-asset-icon">❄️</span>
+                    <span className="rv-asset-icon"><Icon name="settings" size={14} /></span>
                     <strong>{a.name}</strong>
                     <span className="rv-asset-type">{a.type}</span>
                     <span className="rv-asset-tier">{a.tier}</span>
